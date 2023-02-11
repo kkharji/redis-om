@@ -1,0 +1,22 @@
+[package]
+name = "redis-om"
+description = "The Unofficial Object mapping for Redis and Rust. Inspired by redis-om-python"
+version = "0.1.0"
+edition = "2021"
+authors = [ "kkharji <kkharji@protonmail.com>"]
+license = "MIT"
+documentation = "https://docs.rs/redis-om"
+homepage = "https://github.com/kkharji/redis-om-rust"
+repository = "https://github.com/kkharji/redis-om-rust"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+
+[dependencies]
+tap       = { version = "1.0" }
+thiserror = { version = "1.0" }
+redis-om-macros = { path = "../macros" }

@@ -1,0 +1,19 @@
+[package]
+name = "redis-om-macros"
+description = "Proc macros for redis-om"
+version = "0.1.0"
+edition = "2021"
+authors = ["kkharji <kkharji@protonmail.com>"]
+license = "MIT"
+documentation = "https://docs.rs/redis-om-macros"
+homepage = "https://github.com/kkharji/redis-om-rust"
+repository = "https://github.com/kkharji/redis-om-rust"
+readme = "../README.md"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2    = { version = "1.0" }
+quote          = { version = "1.0" }
+syn            = { version = "1.0", features = ["full"] }
