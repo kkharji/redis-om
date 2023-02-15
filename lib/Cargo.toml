@@ -17,6 +17,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 default = []
 
 [dependencies]
-tap       = { version = "1.0" }
-thiserror = { version = "1.0" }
+tap             = { version = "1.0" }
+thiserror       = { version = "1.0" }
 redis-om-macros = { path = "../macros" }
+redis           = { version = "0.22.1", features = ["tokio-comp", "aio"] }
+

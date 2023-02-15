@@ -17,3 +17,8 @@ proc-macro = true
 proc-macro2    = { version = "1.0" }
 quote          = { version = "1.0" }
 syn            = { version = "1.0", features = ["full"] }
+heck           = { version = "0.4.1" }
+
+[dev-dependencies]
+redis-om       = { path = "../lib/" }
+trybuild       = { version = "1.0.77" }
