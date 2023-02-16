@@ -1,4 +1,5 @@
 use redis_om::redis::{from_redis_value, Value};
+use redis_om::redis::{FromRedisValue, ToRedisArgs};
 use redis_om::RedisTransportValue;
 use std::collections::HashMap;
 

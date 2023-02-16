@@ -50,29 +50,12 @@ pub fn redis_model(attr: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```
-/// use redis_om::RedisTransportValue;
-///
-/// #[derive(RedisTransportValue)]
+/// #[derive(redis_om::RedisTransportValue)]
 /// struct Test {
 ///     field_one: String,
 ///     field_two: i32,
 ///     field_three: Vec<u8>,
 /// }
-///
-/// let test = Test {
-///     field_one: "Hello, World!".to_owned(),
-///     field_two: 42,
-///     field_three: vec![1, 2, 3, 4, 5],
-/// };
-///
-/// use redis_om::redis::{Value};
-///
-/// let serialized: Vec<Value> = test.to_redis_args().into_iter().map(|v| Value::Data(v)).collect();
-/// let deserialized: Test = Test::from_redis_value(&Value::Bulk(serialized)).unwrap();
-///
-/// assert_eq!(test.field_one, deserialized.field_one);
-/// assert_eq!(test.field_two, deserialized.field_two);
-/// assert_eq!(test.field_three, deserialized.field_three);
 /// ```
 ///
 /// # Attributes
