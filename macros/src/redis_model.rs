@@ -38,15 +38,15 @@ impl DeriveRedisModel for DataStruct {
 
         quote! {
             impl ::redis_om::RedisModel for #ident {
-                fn redis_key() -> &'static str {
+                fn redis_prefix() -> &'static str {
                     #key_prefix
                 }
 
-                fn _get_primary_key(&self) -> &str {
+                fn _get_pk(&self) -> &str {
                     &self.#pk_field_ident
                 }
 
-                fn _set_primary_key(&mut self, pk: String) {
+                fn _set_pk(&mut self, pk: String) {
                     self.#pk_field_ident = pk;
                 }
             }
