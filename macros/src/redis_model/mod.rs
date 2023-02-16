@@ -8,23 +8,34 @@ pub trait DeriveRedisModel {
 }
 
 impl DeriveRedisModel for DataStruct {
-    fn derive_redis_model(&self, ident: &Ident, _attrs: &AttributeMap) -> TokenStream {
+    fn derive_redis_model(&self, ident: &Ident, attrs: &AttributeMap) -> TokenStream {
         // TODO: introduce an option to set redis_key
+
+        let key_prefix = attrs
+            .get("key_prefix")
+            .map(|s| quote!(#s))
+            .unwrap_or_else(|| quote!(stringify!(#ident)));
+
+        let pk_field_name = attrs
+            .get("pk_field")
+            .map(|s| {
+                let ident = Ident::new(s, ident.span());
+                quote!(#ident)
+            })
+            .unwrap_or_else(|| quote!(id));
 
         quote! {
             impl ::redis_om::RedisModel for #ident {
                 fn redis_key() -> &'static str {
-                    stringify!(#ident)
+                    #key_prefix
                 }
 
                 fn _get_primary_key(&self) -> &str {
-                    // TODO: Require struct to have either id or pk key
-                    &self.id
+                    &self.#pk_field_name
                 }
 
                 fn _set_primary_key(&mut self, pk: String) {
-                    // TODO: Require struct to have either id or pk key
-                    self.id = pk;
+                    self.#pk_field_name = pk;
                 }
             }
         }

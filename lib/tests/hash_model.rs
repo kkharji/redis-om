@@ -1,12 +1,18 @@
+use redis::Commands;
 use redis_om::redis::Value;
 use redis_om::HashModel;
 use redis_om::RedisTransportValue;
 
 type Result<T = (), E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
+fn client() -> Result<redis::Client> {
+    Ok(redis::Client::open("redis://127.0.0.1/")?)
+}
+
 #[test]
 fn basic_with_no_options() -> Result {
     #[derive(HashModel)]
+    #[redis(prefix = "users")]
     struct Account {
         id: String,
         first_name: String,
@@ -33,8 +39,7 @@ fn basic_with_no_options() -> Result {
     assert_eq!(account.last_name, deserialized.last_name);
     assert_eq!(account.interests, deserialized.interests);
 
-    let client = redis::Client::open("redis://127.0.0.1/")?;
-    let mut conn = client.get_connection()?;
+    let mut conn = client()?.get_connection()?;
 
     account.save(&mut conn)?;
 
@@ -45,6 +50,44 @@ fn basic_with_no_options() -> Result {
     assert_eq!(account.interests, db_account.interests);
 
     Account::delete(account.id, &mut conn)?;
+
+    Ok(())
+}
+
+#[test]
+fn basic_with_custom_prefix_and_pk() -> Result {
+    #[derive(HashModel)]
+    #[redis(key_prefix = "user", pk_field = "pk")]
+    struct Account {
+        pk: String,
+        first_name: String,
+        last_name: String,
+        interests: Vec<String>,
+    }
+
+    let mut account = Account {
+        pk: "".into(),
+        first_name: "Joe".into(),
+        last_name: "Doe".into(),
+        interests: vec!["Gaming".into(), "SandCasting".into(), "Writing".into()],
+    };
+
+    let mut conn = client()?.get_connection()?;
+
+    account.save(&mut conn)?;
+
+    let count = conn
+        .scan_match::<_, String>(format!("user:{}", account.pk))?
+        .count();
+
+    assert_ne!(count, 0);
+
+    let db_account = Account::get(&account.pk, &mut conn)?;
+
+    assert_eq!(account.first_name, db_account.first_name);
+    assert_eq!(account.interests, db_account.interests);
+
+    Account::delete(account.pk, &mut conn)?;
 
     Ok(())
 }
