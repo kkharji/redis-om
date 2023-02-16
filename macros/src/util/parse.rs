@@ -5,6 +5,7 @@ pub type AttributeMap = HashMap<String, String>;
 
 /// Parses the Redis attributes in the given list of attributes, and returns a
 /// mapping of attribute names to their string values.
+/// TODO: PANIC if key is not recognized
 pub fn attributes(attributes: &[Attribute]) -> AttributeMap {
     let mut attr_map = HashMap::new();
     for attribute in attributes {

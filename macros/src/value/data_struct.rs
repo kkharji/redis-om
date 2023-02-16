@@ -50,17 +50,19 @@ impl DeriveRedisValue for DataStruct {
                 .into(),
             };
 
-        let err = quote!(Err(::redis_om::redis::RedisError::from((
-            ::redis_om::redis::ErrorKind::TypeError,
-            "the data returned from the redis database was not in the bulk data format or the length of the bulk data is not devisable by two",
+        let err_msg = "the data returned is not in the bulk data format or the length is not devisable by two";
+        let err = quote!(RedisError::from((
+            ErrorKind::TypeError,
+            #err_msg,
             format!("{:#?}", v)
-        ))));
+        )));
 
         quote! {
             impl ::redis_om::redis::ToRedisArgs for #ident {
                 fn write_redis_args<W : ?Sized + ::redis_om::redis::RedisWrite>(&self, out: &mut W) {
+                    use ::redis_om::redis::*;
                     #(
-                        match ::redis_om::redis::ToRedisArgs::to_redis_args(&self.#idents) {
+                        match ToRedisArgs::to_redis_args(&self.#idents) {
                             redis_args if redis_args.len() == 1 => {
                                 out.write_arg_fmt(#stringified_idents);
                                 out.write_arg(&redis_args[0]);
@@ -79,12 +81,11 @@ impl DeriveRedisValue for DataStruct {
 
             impl ::redis_om::redis::FromRedisValue for #ident {
                 fn from_redis_value(v: &::redis_om::redis::Value) -> ::redis_om::redis::RedisResult<Self> {
-                    use ::redis_om::redis::{from_redis_value, Value};
+                    use ::redis_om::redis::*;
 
+                    let Value::Bulk(bulk) = v else { return Err(#err); };
 
-                    let Value::Bulk(bulk) = v else { return #err; };
-
-                    if bulk.len() % 2 != 0 { return #err; };
+                    if bulk.len() % 2 != 0 { return Err(#err); };
 
                     let mut fm = std::collections::HashMap::new();
 
