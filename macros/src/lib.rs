@@ -2,11 +2,44 @@
 
 //! Derive proc macros for redis-om crate
 
+mod hash_model;
+mod redis_model;
 mod util;
 mod value;
+
+use hash_model::DeriveHashModel;
 use proc_macro::TokenStream;
+use redis_model::DeriveRedisModel;
 use syn::{parse_macro_input, Data::*, DeriveInput};
 use value::DeriveRedisValue;
+
+#[proc_macro_derive(HashModel, attributes(redis))]
+/// ....
+pub fn hash_model(attr: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(attr as DeriveInput);
+    let ident = ast.ident;
+    let attrs = util::parse::attributes(&ast.attrs);
+
+    match ast.data {
+        Struct(s) => s.derive_hash_model(&ident, &attrs).into(),
+        Enum(_) => panic!("Enum is not supported. Please open an issue in https://github.com/kkharji/redis-om-rust"),
+        Union(_) => panic!("Unions is not supported. Please open an issue in https://github.com/kkharji/redis-om-rust"),
+    }
+}
+
+#[proc_macro_derive(RedisModel, attributes(redis))]
+/// ....
+pub fn redis_model(attr: TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(attr as DeriveInput);
+    let ident = ast.ident;
+    let attrs = util::parse::attributes(&ast.attrs);
+
+    match ast.data {
+        Struct(s) => s.derive_redis_model(&ident, &attrs).into(),
+        Enum(e) => e.derive_redis_model(&ident, &attrs).into(),
+        Union(_) => panic!("Unions is not supported. Please open an issue in https://github.com/kkharji/redis-om-rust"),
+    }
+}
 
 /// Derive procedural macro that automatically generate implementation for
 ///

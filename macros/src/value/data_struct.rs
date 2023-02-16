@@ -52,7 +52,8 @@ impl DeriveRedisValue for DataStruct {
 
         let err = quote!(Err(::redis_om::redis::RedisError::from((
             ::redis_om::redis::ErrorKind::TypeError,
-            "the data returned from the redis database was not in the bulk data format or the length of the bulk data is not devisable by two"
+            "the data returned from the redis database was not in the bulk data format or the length of the bulk data is not devisable by two",
+            format!("{:#?}", v)
         ))));
 
         quote! {

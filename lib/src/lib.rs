@@ -3,15 +3,22 @@
 #![deny(missing_docs, unstable_features)]
 // #![doc = include_str!("../README.md")]
 
-pub use redis_om_macros::RedisTransportValue;
+mod hash_model;
+mod redis_model;
+mod shared;
 
 pub use redis;
 
-/// A trait for types that can be transported over Redis.
+pub use redis_om_macros::HashModel;
+pub use redis_om_macros::RedisModel;
+pub use redis_om_macros::RedisTransportValue;
+
+pub use hash_model::HashModel;
+pub use redis_model::RedisModel;
+
+/// A trait for types that can be transported over Redis, providing a common interface for serializing and deserializing values over Redis.
 ///
-/// This trait is a combination of `redis::ToRedisArgs` and `redis::FromRedisValue`, providing a common interface for serializing and deserializing values over Redis.
-///
-/// The trait delegate it's default implementation  to `redis::ToRedisArgs` and `redis::FromRedisValue` traits.
+/// This implemented by default for types that implements `redis::ToRedisArgs` and `redis::FromRedisValue`.
 ///
 pub trait RedisTransportValue: redis::ToRedisArgs + redis::FromRedisValue {
     /// Convert Self to redis args
