@@ -1,6 +1,5 @@
-#![deny(missing_docs, unstable_features)]
-
 //! Derive proc macros for redis-om crate
+#![deny(missing_docs, unstable_features)]
 
 mod hash_model;
 mod redis_model;
@@ -36,7 +35,7 @@ pub fn redis_model(attr: TokenStream) -> TokenStream {
 
     match ast.data {
         Struct(s) => s.derive_redis_model(&ident, &attrs).into(),
-        Enum(e) => e.derive_redis_model(&ident, &attrs).into(),
+        Enum(_) => panic!("Enum is not supported. Please open an issue in https://github.com/kkharji/redis-om-rust"),
         Union(_) => panic!("Unions is not supported. Please open an issue in https://github.com/kkharji/redis-om-rust"),
     }
 }

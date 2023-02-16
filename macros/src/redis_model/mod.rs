@@ -1,7 +1,7 @@
 use crate::util::parse::AttributeMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DataEnum, DataStruct, Ident};
+use syn::{DataStruct, Ident};
 
 pub trait DeriveRedisModel {
     fn derive_redis_model(&self, ident: &Ident, attrs: &AttributeMap) -> TokenStream;
@@ -16,13 +16,25 @@ impl DeriveRedisModel for DataStruct {
             .map(|s| quote!(#s))
             .unwrap_or_else(|| quote!(stringify!(#ident)));
 
-        let pk_field_name = attrs
+        let pk_field = attrs
             .get("pk_field")
-            .map(|s| {
-                let ident = Ident::new(s, ident.span());
-                quote!(#ident)
-            })
-            .unwrap_or_else(|| quote!(id));
+            .map(ToString::to_string)
+            .unwrap_or_else(|| "id".into());
+
+        let pk_field_ident = Ident::new(&pk_field, ident.span());
+
+        let pk_field_exists = self.fields.iter().any(|field| {
+            field
+                .ident
+                .as_ref()
+                .map(|ident| ident == &pk_field_ident)
+                .unwrap_or_default()
+        });
+
+        if !pk_field_exists {
+            // Add pk_field_name as a new field to the struct
+            panic!("Model requires id field or pk_field to be set!!",);
+        }
 
         quote! {
             impl ::redis_om::RedisModel for #ident {
@@ -31,19 +43,13 @@ impl DeriveRedisModel for DataStruct {
                 }
 
                 fn _get_primary_key(&self) -> &str {
-                    &self.#pk_field_name
+                    &self.#pk_field_ident
                 }
 
                 fn _set_primary_key(&mut self, pk: String) {
-                    self.#pk_field_name = pk;
+                    self.#pk_field_ident = pk;
                 }
             }
         }
-    }
-}
-
-impl DeriveRedisModel for DataEnum {
-    fn derive_redis_model(&self, _ident: &Ident, _attrs: &AttributeMap) -> TokenStream {
-        quote!()
     }
 }
