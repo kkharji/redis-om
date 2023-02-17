@@ -14,4 +14,5 @@ pub use redis_om_macros::RedisModel;
 pub use redis_om_macros::RedisTransportValue;
 
 pub use hash_model::HashModel;
+pub use redis::{Client, FromRedisValue, RedisError, RedisResult, ToRedisArgs};
 pub use redis_model::RedisModel;
