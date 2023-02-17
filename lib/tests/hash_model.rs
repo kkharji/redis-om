@@ -91,3 +91,45 @@ fn basic_with_custom_prefix_and_pk() -> Result {
 
     Ok(())
 }
+
+#[test]
+fn basic_with_getters_setters() -> Result {
+    #[derive(Default, HashModel)]
+    #[redis(key_prefix = "user", pk_field = "pk")]
+    struct Account {
+        pk: String,
+        first_name: String,
+        last_name: String,
+        interests: Vec<String>,
+    }
+
+    let mut account = Account::default();
+
+    account
+        .set_first_name("Joe")
+        .set_last_name("Doe")
+        .set_interests(vec![
+            "Gaming".into(),
+            "SandCasting".into(),
+            "Writing".into(),
+        ]);
+
+    let mut conn = client()?.get_connection()?;
+
+    account.save(&mut conn)?;
+
+    let count = conn
+        .scan_match::<_, String>(format!("user:{}", account.pk()))?
+        .count();
+
+    assert_ne!(count, 0);
+
+    let db_account = Account::get(&account.pk(), &mut conn)?;
+
+    assert_eq!(account.first_name(), db_account.first_name());
+    assert_eq!(account.interests(), db_account.interests());
+
+    Account::delete(account.pk(), &mut conn)?;
+
+    Ok(())
+}
