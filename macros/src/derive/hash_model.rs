@@ -1,9 +1,7 @@
+use super::*;
 use crate::{
     ext::TypeExt,
-    get_set::DeriveGetSet,
-    redis_model::DeriveRedisModel,
     util::parse::{self, AttributeMap},
-    value::DeriveRedisValue,
 };
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};

@@ -36,7 +36,7 @@ impl DeriveGetSet for DataStruct {
     }
 }
 
-pub(crate) fn get(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
+fn get(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     let arguments = vec![quote![&self]];
     let method_name = field_name;
     let method_docs = format!("Get reference to `{}`", field_name.to_string());
@@ -56,7 +56,7 @@ pub(crate) fn get(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     }
 }
 
-pub fn get_mut(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
+fn get_mut(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     let arguments = vec![quote![&mut self]];
     let method_name = format_ident!("{}_mut", field_name);
     let method_docs = format!("Get mutable reference to `{}`", field_name.to_string());
@@ -76,7 +76,7 @@ pub fn get_mut(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     }
 }
 
-pub(crate) fn set(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
+fn set(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     let mut arguments = vec![quote![&mut self]];
     let method_name = format_ident!("set_{}", field_name);
     let return_type = quote![&mut Self];

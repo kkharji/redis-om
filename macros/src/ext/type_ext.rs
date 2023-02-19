@@ -1,4 +1,3 @@
-use crate::consts::LIST_COLLECTION_TYPES;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{GenericArgument, Ident, Path, PathArguments, Type};
@@ -142,6 +141,15 @@ impl TypeExt for Type {
     fn is_list_collection(&self) -> bool {
         let Some(path) = self.path() else { return false };
         let Some(last) = path.segments.last() else { return false; };
+
+        pub(crate) const LIST_COLLECTION_TYPES: [&str; 6] = [
+            "Vec",
+            "LinkedList",
+            "VecDeque",
+            "BinaryHeap",
+            "HashSet",
+            "BTreeSet",
+        ];
 
         if LIST_COLLECTION_TYPES.contains(&last.ident.to_string().as_str()) {
             if let PathArguments::AngleBracketed(bracketed) = &last.arguments {

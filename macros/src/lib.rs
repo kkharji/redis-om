@@ -1,19 +1,13 @@
 //! Derive proc macros for redis-om crate
 #![deny(missing_docs, unstable_features)]
 
-mod consts;
+mod derive;
 mod ext;
-mod get_set;
-mod hash_model;
-mod redis_model;
 mod util;
-mod value;
 
-use hash_model::DeriveHashModel;
+use derive::*;
 use proc_macro::TokenStream;
-use redis_model::DeriveRedisModel;
 use syn::{parse_macro_input, Data::*, DeriveInput};
-use value::DeriveRedisValue;
 
 #[proc_macro_derive(HashModel, attributes(redis))]
 /// ....
