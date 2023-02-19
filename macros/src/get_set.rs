@@ -1,7 +1,40 @@
-use crate::ext::{AttributeExt, TypeExt};
+use crate::ext::{AttributeExt, FieldsExt, TypeExt};
+use crate::util::parse::AttributeMap;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{punctuated::Punctuated, token::Comma, Field, Ident};
+use syn::{DataStruct, Ident};
+
+pub trait DeriveGetSet {
+    fn derive_get_set(&self, ident: &Ident, attrs: &AttributeMap) -> TokenStream;
+}
+
+impl DeriveGetSet for DataStruct {
+    fn derive_get_set(&self, ident: &Ident, _attrs: &AttributeMap) -> TokenStream {
+        let functions = self.fields.named().iter().map(|field| {
+            let field_type = &field.ty;
+            let Some(field_name) = field.ident.as_ref() else { unreachable!("unnamed field guard failed"); };
+
+            let get = get(field_name, &field_type);
+            let set = set(field_name, &field_type);
+            let get_mut = get_mut(field_name, &field_type);
+
+            quote! {
+                #get
+                #get_mut
+                #set
+            }
+        });
+
+        // TODO: Support generics and where clause
+        quote! {
+            #[allow(dead_code)]
+            #[allow(clippy::all)]
+            impl #ident {
+                #(#functions)*
+            }
+        }
+    }
+}
 
 pub(crate) fn get(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     let arguments = vec![quote![&self]];
@@ -83,44 +116,6 @@ pub(crate) fn set(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
         pub fn #method_name <#(#generics),*> ( #(#arguments),* ) -> #return_type {
             #assignment
             self
-        }
-    }
-}
-
-pub(crate) fn common_get_set(field: &Field) -> TokenStream {
-    let field_type = &field.ty;
-    let Some(field_name) = field.ident.as_ref() else { unreachable!("unnamed field guard failed"); };
-
-    let get = get(field_name, &field_type);
-    let set = set(field_name, &field_type);
-    let get_mut = get_mut(field_name, &field_type);
-
-    quote! {
-        #get
-        #get_mut
-        #set
-    }
-}
-
-#[allow(dead_code)]
-pub(crate) fn default_impl(
-    struct_ident: &Ident,
-    pk_field_ident: &Ident,
-    fields: &Punctuated<Field, Comma>,
-) -> TokenStream {
-    let idents = fields.iter().filter_map(|field| {
-        let ident = field.ident.as_ref().unwrap();
-        (ident != pk_field_ident).then_some(ident)
-    });
-
-    quote! {
-        impl Default for #struct_ident {
-            fn default() -> Self {
-                Self {
-                    #pk_field_ident: ::rusty_ulid::generate_ulid_string(),
-                    #(#idents: Default::default(),)*
-                }
-            }
         }
     }
 }

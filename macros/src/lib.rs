@@ -3,7 +3,7 @@
 
 mod consts;
 mod ext;
-mod generate;
+mod get_set;
 mod hash_model;
 mod redis_model;
 mod util;

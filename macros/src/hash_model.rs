@@ -1,6 +1,6 @@
 use crate::{
     ext::TypeExt,
-    generate,
+    get_set::DeriveGetSet,
     redis_model::DeriveRedisModel,
     util::parse::{self, AttributeMap},
     value::DeriveRedisValue,
@@ -19,7 +19,7 @@ impl DeriveHashModel for DataStruct {
         let Fields::Named(fields) = &self.fields else { panic!("tuple and unit structs are not supported for hash models"); };
 
         // TODO: make sure ident haven't already implemented redis::ToRedisArgs and redis::FromRedisValue
-        impl_getters_setters(fields, ident).to_tokens(&mut stream);
+        self.derive_get_set(ident, attrs).to_tokens(&mut stream);
         self.derive_redis_value(ident, attrs).to_tokens(&mut stream);
         self.derive_redis_model(ident, attrs).to_tokens(&mut stream);
 
@@ -126,21 +126,4 @@ fn schema_for_type(ident: &Ident, ty: &Type, attrs: &AttributeMap) -> String {
     }
 
     schema.join(" ")
-}
-
-fn impl_getters_setters(fields: &syn::FieldsNamed, ident: &Ident) -> TokenStream {
-    let functions = fields
-        .named
-        .iter()
-        .map(generate::common_get_set)
-        .collect::<Vec<_>>();
-
-    // TODO: Support generics and where clause
-    quote! {
-        #[allow(dead_code)]
-        #[allow(clippy::all)]
-        impl #ident {
-            #(#functions)*
-        }
-    }
 }

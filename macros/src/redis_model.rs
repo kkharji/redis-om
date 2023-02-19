@@ -1,7 +1,7 @@
 use crate::util::parse::AttributeMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DataStruct, Ident};
+use syn::{punctuated::Punctuated, DataStruct, Ident};
 
 pub trait DeriveRedisModel {
     fn derive_redis_model(&self, ident: &Ident, attrs: &AttributeMap) -> TokenStream;
@@ -38,7 +38,7 @@ impl DeriveRedisModel for DataStruct {
 
         // TODO: Ignore types already implements default trait
         // let syn::Fields::Named(fields) = &self.fields else { panic!("tuple and unit structs are not supported for redis models"); };
-        // let default_impl = crate::generate::default_impl(ident, &pk_field_ident, &fields.named);
+        // let default_impl = default_impl(ident, &pk_field_ident, &fields.named);
 
         quote! {
 
@@ -53,6 +53,29 @@ impl DeriveRedisModel for DataStruct {
 
                 fn _set_pk(&mut self, pk: String) {
                     self.#pk_field_ident = pk;
+                }
+            }
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub(crate) fn default_impl(
+    struct_ident: &Ident,
+    pk_field_ident: &Ident,
+    fields: &Punctuated<syn::Field, syn::token::Comma>,
+) -> TokenStream {
+    let idents = fields.iter().filter_map(|field| {
+        let ident = field.ident.as_ref().unwrap();
+        (ident != pk_field_ident).then_some(ident)
+    });
+
+    quote! {
+        impl Default for #struct_ident {
+            fn default() -> Self {
+                Self {
+                    #pk_field_ident: ::rusty_ulid::generate_ulid_string(),
+                    #(#idents: Default::default(),)*
                 }
             }
         }

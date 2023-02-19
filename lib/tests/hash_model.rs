@@ -221,5 +221,5 @@ fn test_schema() {
                 integer NUMERIC SORTABLE \
                 float NUMERIC"
         )
-    )
+    );
 }
