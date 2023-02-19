@@ -94,7 +94,7 @@ fn basic_with_custom_prefix_and_pk() -> Result {
 
 #[test]
 fn basic_with_getters_setters() -> Result {
-    #[derive(Default, HashModel)]
+    #[derive(HashModel, Default)]
     #[redis(key_prefix = "user", pk_field = "pk")]
     struct Account {
         pk: String,

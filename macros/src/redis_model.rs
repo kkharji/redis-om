@@ -36,7 +36,12 @@ impl DeriveRedisModel for DataStruct {
             panic!("Model requires id field or pk_field to be set!!",);
         }
 
+        // TODO: Ignore types already implements default trait
+        // let syn::Fields::Named(fields) = &self.fields else { panic!("tuple and unit structs are not supported for redis models"); };
+        // let default_impl = crate::generate::default_impl(ident, &pk_field_ident, &fields.named);
+
         quote! {
+
             impl ::redis_om::RedisModel for #ident {
                 fn redis_prefix() -> &'static str {
                     #key_prefix

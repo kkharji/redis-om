@@ -2,7 +2,7 @@ use crate::{
     generate, redis_model::DeriveRedisModel, util::parse::AttributeMap, value::DeriveRedisValue,
 };
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::{DataStruct, Fields, Ident};
 
 pub trait DeriveHashModel {
@@ -12,7 +12,7 @@ pub trait DeriveHashModel {
 impl DeriveHashModel for DataStruct {
     fn derive_hash_model(&self, ident: &Ident, attrs: &AttributeMap) -> TokenStream {
         let mut stream = TokenStream::new();
-        let Fields::Named(fields) = &self.fields else { panic!("tuple and unit structs are not supported"); };
+        let Fields::Named(fields) = &self.fields else { panic!("tuple and unit structs are not supported for hash models"); };
 
         let functions = fields
             .named
@@ -21,7 +21,7 @@ impl DeriveHashModel for DataStruct {
             .collect::<Vec<_>>();
 
         // TODO: Support generics and where clause
-        quote::quote! {
+        quote! {
             #[allow(dead_code)]
             #[allow(clippy::all)]
             impl #ident {
