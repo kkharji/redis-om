@@ -26,6 +26,11 @@ pub trait RedisModel: redis::ToRedisArgs + redis::FromRedisValue {
         format!("{}:{}", Self::redis_prefix(), pk)
     }
 
+    /// Check if str is  of format "{self::redis_key}:{pk}"
+    fn _is_pk_fmt(pk: &str) -> bool {
+        pk.starts_with(Self::redis_prefix())
+    }
+
     /// Get key "{self::redis_key}:{self._get_primary_key()}"
     fn _get_redis_key(&self) -> String {
         Self::_fmt_pk(self._get_pk())

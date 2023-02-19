@@ -22,12 +22,22 @@ pub trait HashModel: RedisModel {
 
     /// Get a list of all primary keys for current type
     fn get(pk: impl AsRef<str>, conn: &mut Conn) -> RedisResult<Self> {
-        conn.hgetall(Self::_fmt_pk(pk.as_ref()))
+        let pk = pk.as_ref();
+        if Self::_is_pk_fmt(pk) {
+            conn.hgetall(pk)
+        } else {
+            conn.hgetall(Self::_fmt_pk(pk))
+        }
     }
 
     /// Delete by given pk
     fn delete(pk: impl AsRef<str>, conn: &mut Conn) -> RedisResult<()> {
-        conn.del(Self::_fmt_pk(pk.as_ref()))
+        let pk = pk.as_ref();
+        if Self::_is_pk_fmt(pk) {
+            conn.del(pk)
+        } else {
+            conn.del(Self::_fmt_pk(pk))
+        }
     }
 }
 

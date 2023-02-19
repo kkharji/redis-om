@@ -133,3 +133,62 @@ fn basic_with_getters_setters() -> Result {
 
     Ok(())
 }
+
+#[test]
+fn all_primary_keys() -> Result {
+    #[derive(HashModel, Debug)]
+    struct Account {
+        id: String,
+        first_name: String,
+        last_name: String,
+        interests: Vec<String>,
+    }
+
+    let mut accounts = [
+        ["Joe", "Doe"],
+        ["Jane", "Doe"],
+        ["John", "Smith"],
+        ["Tim", "B"],
+    ]
+    .map(|[first, last]| Account {
+        id: "".into(),
+        first_name: first.into(),
+        last_name: last.into(),
+        interests: vec!["Gaming".into(), "SandCasting".into(), "Writing".into()],
+    })
+    .into_iter()
+    .collect::<Vec<_>>();
+
+    let mut conn = client()?.get_connection()?;
+
+    for account in accounts.iter_mut() {
+        account.save(&mut conn)?;
+    }
+
+    let pks = Account::all_pks(&mut conn)?.collect::<Vec<String>>();
+
+    let count = pks.len();
+
+    assert_eq!(count, 4);
+
+    let db_accounts = pks
+        .into_iter()
+        .map(|id| Account::get(id, &mut conn))
+        .collect::<Vec<_>>();
+
+    for account in accounts.iter() {
+        Account::delete(account.id(), &mut conn)?;
+    }
+
+    if !db_accounts.iter().all(|v| v.is_ok()) {
+        panic!(
+            "{:#?}",
+            db_accounts
+                .into_iter()
+                .map(|v| v.unwrap_err())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    Ok(())
+}
