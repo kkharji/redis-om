@@ -1,8 +1,15 @@
 use crate::redis_model::RedisModel;
 use crate::shared::{Commands, Conn};
 use ::redis::RedisResult;
+
 /// Hash Object Model
 pub trait HashModel: RedisModel {
+    /// Get Redis key to be used in storing HashModel object.
+    /// This should by default that HashModel name in lowercase.
+    fn redis_prefix() -> &'static str {
+        <Self as RedisModel>::_redis_prefix()
+    }
+
     /// Save Self into redis database
     fn save(&mut self, conn: &mut Conn) -> RedisResult<()> {
         self._ensure_pk();
@@ -39,6 +46,7 @@ pub trait HashModel: RedisModel {
             conn.del(Self::_fmt_pk(pk))
         }
     }
-}
 
-impl<T: RedisModel> HashModel for T {}
+    /// Redis search schema
+    fn redissearch_schema() -> &'static str;
+}

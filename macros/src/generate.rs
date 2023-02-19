@@ -1,4 +1,4 @@
-use crate::util::{AttributeExt, TypeExt};
+use crate::ext::{AttributeExt, TypeExt};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{punctuated::Punctuated, token::Comma, Field, Ident};

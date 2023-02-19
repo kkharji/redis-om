@@ -192,3 +192,34 @@ fn all_primary_keys() -> Result {
 
     Ok(())
 }
+
+#[test]
+fn test_schema() {
+    #[derive(HashModel, Debug)]
+    struct Address {
+        id: String,
+        #[redis(index)]
+        a: String,
+        #[redis(index, full_text_search)]
+        b: String,
+        #[redis(index, sortable)]
+        integer: u32,
+        #[redis(index)]
+        float: f32,
+    }
+
+    let key_prefix = Address::redis_prefix();
+    let schema = Address::redissearch_schema().to_string();
+
+    assert_eq!(
+        schema,
+        format!(
+            "ON HASH PREFIX 1 {key_prefix} SCHEMA id TAG SEPARATOR | \
+                a TAG SEPARATOR | \
+                b TAG SEPARATOR | \
+                b AS b_fts TEXT \
+                integer NUMERIC SORTABLE \
+                float NUMERIC"
+        )
+    )
+}

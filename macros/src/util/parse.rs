@@ -16,6 +16,13 @@ pub fn attributes(attributes: &[Attribute]) -> AttributeMap {
         if let Ok(Meta::List(meta)) = attribute.parse_meta() {
             if meta.path.is_ident("redis") {
                 for nested_meta in meta.nested {
+                    if let NestedMeta::Meta(Meta::Path(ref path)) = nested_meta {
+                        attr_map.insert(
+                            path.get_ident().expect("Attribute name").to_string(),
+                            "true".to_string(),
+                        );
+                    }
+
                     if let NestedMeta::Meta(Meta::NameValue(name_value)) = nested_meta {
                         let attr_name = name_value
                             .path
@@ -24,8 +31,20 @@ pub fn attributes(attributes: &[Attribute]) -> AttributeMap {
                             .to_string();
                         let attr_value = match &name_value.lit {
                             syn::Lit::Str(lit_str) => lit_str.value(),
-                            _ => panic!("Attribute value must be a string literal"),
+                            syn::Lit::Bool(lit_bool) => lit_bool.value().to_string(),
+                            _ => panic!(
+                                "Attribute value must be a string literal or boolean literal"
+                            ),
                         };
+
+                        if attr_name == "index" {
+                            if let Ok(val) = attr_value.parse() {
+                                attr_map.insert("index".to_string(), val);
+                                continue;
+                            } else {
+                                panic!("Index attribute value must be a boolean literal");
+                            }
+                        }
                         attr_map.insert(attr_name, attr_value);
                     }
                 }

@@ -1,6 +1,8 @@
 //! Derive proc macros for redis-om crate
 #![deny(missing_docs, unstable_features)]
 
+mod consts;
+mod ext;
 mod generate;
 mod hash_model;
 mod redis_model;

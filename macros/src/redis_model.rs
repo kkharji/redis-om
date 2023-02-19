@@ -43,7 +43,7 @@ impl DeriveRedisModel for DataStruct {
         quote! {
 
             impl ::redis_om::RedisModel for #ident {
-                fn redis_prefix() -> &'static str {
+                fn _redis_prefix() -> &'static str {
                     #key_prefix
                 }
 
