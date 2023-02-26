@@ -4,6 +4,8 @@ use crate::ast::Ctx;
 
 pub mod get_set;
 pub mod hash_model;
+#[cfg(feature = "json")]
+pub mod json_model;
 pub mod redis_model;
 pub mod redissearch_model;
 pub mod value;
@@ -11,6 +13,7 @@ pub mod value;
 #[derive(Clone, Copy)]
 pub enum Derive {
     HashModel,
+    JsonModel,
 }
 
 impl Derive {

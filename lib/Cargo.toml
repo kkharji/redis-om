@@ -15,6 +15,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
+json = [ "redis/json", "serde", "serde_json", "redis-om-macros/json" ]
 
 [dependencies]
 tap             = { version = "1.0" }
@@ -22,6 +23,8 @@ thiserror       = { version = "1.0" }
 redis-om-macros = { path = "../macros" }
 redis           = { version = "0.22.1" }
 rusty_ulid      = { version = "2.0.0" }
+serde           = { version = "1", features = [ "derive" ], optional = true }
+serde_json      = { version = "1", optional = true }
 
 [dev-dependencies]
 tokio          = { version = "1.25.0", features = ["full"] }

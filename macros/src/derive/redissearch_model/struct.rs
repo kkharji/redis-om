@@ -18,6 +18,7 @@ pub(super) fn derive(
     let prefix_key = cont.attrs.prefix_key.as_str();
     let leading = match model_type {
         Derive::HashModel => "ON HASH PREFIX 1",
+        Derive::JsonModel => "ON JSON PREFIX 1",
     };
 
     let fields_schema = fields

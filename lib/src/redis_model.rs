@@ -2,7 +2,7 @@ use crate::shared::{Commands, Conn};
 use redis::RedisResult;
 
 /// Shared Redis Object Model
-pub trait RedisModel: redis::ToRedisArgs + redis::FromRedisValue {
+pub trait RedisModel {
     /// Get Redis key to be used in storing HashModel object.
     /// This should by default that HashModel name in lowercase.
     fn _prefix_key() -> &'static str;

@@ -23,6 +23,17 @@ pub fn hash_model(attr: TokenStream) -> TokenStream {
     }
 }
 
+#[cfg(feature = "json")]
+#[proc_macro_derive(JsonModel, attributes(redis))]
+/// ....
+pub fn json_model(attr: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(attr as DeriveInput);
+    match into_container(&input) {
+        Ok((ctx, cont)) => into_stream(json_model::derive(&ctx, &cont), ctx),
+        Err(value) => return value,
+    }
+}
+
 #[proc_macro_derive(RedisModel, attributes(redis))]
 /// ....
 pub fn redis_model(attr: TokenStream) -> TokenStream {

@@ -13,6 +13,10 @@ readme = "../README.md"
 [lib]
 proc-macro = true
 
+[features]
+default = []
+json = []
+
 [dependencies]
 proc-macro2    = { version = "1.0" }
 quote          = { version = "1.0" }

@@ -2,10 +2,12 @@ use crate::redis_model::RedisModel;
 use crate::shared::{Commands, Conn};
 use crate::RedisSearchModel;
 use ::redis::RedisResult;
-use redis::{FromRedisValue, ToRedisArgs};
+use redis::{ErrorKind, JsonCommands, RedisError};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
 /// Hash Object Model
-pub trait HashModel: RedisModel + RedisSearchModel + ToRedisArgs + FromRedisValue {
+pub trait JsonModel: RedisModel + RedisSearchModel + Serialize + DeserializeOwned {
     /// Get Redis key to be used in storing HashModel object.
     /// This should by default that HashModel name in lowercase.
     fn redis_prefix() -> &'static str {
@@ -16,10 +18,7 @@ pub trait HashModel: RedisModel + RedisSearchModel + ToRedisArgs + FromRedisValu
     fn save(&mut self, conn: &mut Conn) -> RedisResult<()> {
         self._ensure_pk();
 
-        let key = self._get_redis_key();
-        let data = ToRedisArgs::to_redis_args(self);
-
-        redis::cmd("HSET").arg(key).arg(data).query(conn)
+        conn.json_set(self._get_redis_key(), "$", &self)
     }
 
     /// Get a list of all primary keys for current type
@@ -32,20 +31,35 @@ pub trait HashModel: RedisModel + RedisSearchModel + ToRedisArgs + FromRedisValu
     /// Get a list of all primary keys for current type
     fn get(pk: impl AsRef<str>, conn: &mut Conn) -> RedisResult<Self> {
         let pk = pk.as_ref();
-        if Self::_is_pk_fmt(pk) {
-            conn.hgetall(pk)
+        let res: String = if Self::_is_pk_fmt(pk) {
+            conn.json_get(pk, "$")
         } else {
-            conn.hgetall(Self::_fmt_pk(pk))
-        }
+            conn.json_get(Self::_fmt_pk(pk), "$")
+        }?;
+
+        let value = serde_json::from_str::<'_, serde_json::Value>(&res)
+            .map_err(RedisError::from)?
+            .as_array()
+            .and_then(|f| f.first())
+            .map(|v| v.to_owned())
+            .ok_or_else(|| {
+                RedisError::from((
+                    ErrorKind::Serialize,
+                    "expect an array with at least one item",
+                    format!("got {:#?}", res),
+                ))
+            })?;
+
+        serde_json::from_value(value).map_err(|e| e.into())
     }
 
     /// Delete by given pk
     fn delete(pk: impl AsRef<str>, conn: &mut Conn) -> RedisResult<()> {
         let pk = pk.as_ref();
         if Self::_is_pk_fmt(pk) {
-            conn.del(pk)
+            conn.json_del(pk, "$")
         } else {
-            conn.del(Self::_fmt_pk(pk))
+            conn.json_del(Self::_fmt_pk(pk), "$")
         }
     }
 
