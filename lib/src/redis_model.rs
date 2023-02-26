@@ -6,7 +6,7 @@ use std::time::Duration;
 pub trait RedisModel: redis::ToRedisArgs + redis::FromRedisValue {
     /// Get Redis key to be used in storing HashModel object.
     /// This should by default that HashModel name in lowercase.
-    fn _redis_prefix() -> &'static str;
+    fn _prefix_key() -> &'static str;
 
     /// Get primary key
     fn _get_pk(&self) -> &str;
@@ -23,12 +23,12 @@ pub trait RedisModel: redis::ToRedisArgs + redis::FromRedisValue {
 
     /// Get key "{self::redis_key}:{pk}"
     fn _fmt_pk(pk: &str) -> String {
-        format!("{}:{}", Self::_redis_prefix(), pk)
+        format!("{}:{}", Self::_prefix_key(), pk)
     }
 
     /// Check if str is  of format "{self::redis_key}:{pk}"
     fn _is_pk_fmt(pk: &str) -> bool {
-        pk.starts_with(Self::_redis_prefix())
+        pk.starts_with(Self::_prefix_key())
     }
 
     /// Get key "{self::redis_key}:{self._get_primary_key()}"

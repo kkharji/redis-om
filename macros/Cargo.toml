@@ -22,3 +22,4 @@ heck           = { version = "0.4.1" }
 [dev-dependencies]
 redis-om       = { path = "../lib/" }
 trybuild       = { version = "1.0.77" }
+pretty_assertions = { version = "1.3.0" }

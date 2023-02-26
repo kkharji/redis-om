@@ -5,14 +5,17 @@
 
 mod hash_model;
 mod redis_model;
+mod redissearch_model;
 mod shared;
 
 pub use redis;
+pub use redis::{Client, FromRedisValue, RedisError, RedisResult, ToRedisArgs};
 
 pub use redis_om_macros::HashModel;
 pub use redis_om_macros::RedisModel;
+pub use redis_om_macros::RedisSearchModel;
 pub use redis_om_macros::RedisTransportValue;
 
 pub use hash_model::HashModel;
-pub use redis::{Client, FromRedisValue, RedisError, RedisResult, ToRedisArgs};
 pub use redis_model::RedisModel;
+pub use redissearch_model::RedisSearchModel;

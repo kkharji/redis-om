@@ -60,10 +60,7 @@ impl TypeExt for Type {
     }
 
     fn is_reference(&self) -> bool {
-        match &self {
-            Self::Reference(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::Reference(_))
     }
 
     fn is_primitive_copy(&self) -> bool {
@@ -164,11 +161,22 @@ impl TypeExt for Type {
         let Some(path) = self.path() else {return false;};
         let Some(ident) = path.segments.last().map(|v| v.ident.to_string()) else { return false; };
 
-        match ident.as_str() {
-            "i8" | "i16" | "i32" | "i64" | "i128" | "isize" | "u8" | "u16" | "u32" | "u64"
-            | "u128" | "usize" | "f32" | "f64" => true,
-            _ => false,
-        }
+        matches!(
+            ident.as_str(),
+            "i8" | "i16"
+                | "i32"
+                | "i64"
+                | "i128"
+                | "isize"
+                | "u8"
+                | "u16"
+                | "u32"
+                | "u64"
+                | "u128"
+                | "usize"
+                | "f32"
+                | "f64"
+        )
     }
 
     fn get_inner_type(&self) -> Option<&syn::Type> {

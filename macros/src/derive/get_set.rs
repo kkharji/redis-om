@@ -1,4 +1,4 @@
-use crate::ext::{AttributeExt, FieldsExt, TypeExt};
+use crate::ext::*;
 use crate::util::parse::AttributeMap;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -39,7 +39,7 @@ impl DeriveGetSet for DataStruct {
 fn get(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     let arguments = vec![quote![&self]];
     let method_name = field_name;
-    let method_docs = format!("Get reference to `{}`", field_name.to_string());
+    let method_docs = format!("Get reference to `{}`", field_name);
 
     let mut attributes = vec![];
 
@@ -59,7 +59,7 @@ fn get(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
 fn get_mut(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     let arguments = vec![quote![&mut self]];
     let method_name = format_ident!("{}_mut", field_name);
-    let method_docs = format!("Get mutable reference to `{}`", field_name.to_string());
+    let method_docs = format!("Get mutable reference to `{}`", field_name);
 
     let mut attributes = vec![];
 
@@ -80,7 +80,7 @@ fn set(field_name: &Ident, field_type: &&syn::Type) -> TokenStream {
     let mut arguments = vec![quote![&mut self]];
     let method_name = format_ident!("set_{}", field_name);
     let return_type = quote![&mut Self];
-    let method_docs = format!("Set `{}` value ", field_name.to_string());
+    let method_docs = format!("Set `{}` value ", field_name);
 
     let mut generics = vec![];
     let mut attributes = vec![];

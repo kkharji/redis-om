@@ -9,6 +9,7 @@ type Result<T = (), E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 fn struct_with_no_options() -> Result {
     #[derive(RedisTransportValue)]
     struct Account {
+        #[redis(primary_key)]
         first_name: String,
         last_name: String,
         interests: Vec<String>,
@@ -40,6 +41,7 @@ fn struct_with_rename_all_option() -> Result {
     #[derive(RedisTransportValue)]
     #[redis(rename_all = "camelCase")]
     struct Account {
+        #[redis(primary_key)]
         first_name: String,
         last_name: String,
     }
@@ -117,6 +119,7 @@ fn enum_with_rename_all_option() -> Result {
 fn enum_struct_compo() -> Result {
     #[derive(Debug, RedisTransportValue, PartialEq)]
     enum AccountKind {
+        #[redis(alias = "owner")]
         Admin,
         Shopper,
     }
@@ -124,6 +127,7 @@ fn enum_struct_compo() -> Result {
     #[derive(RedisTransportValue)]
     #[redis(rename_all = "camelCase")]
     struct Account {
+        #[redis(primary_key)]
         first_name: String,
         last_name: String,
         #[redis(rename = "accountKind")]
