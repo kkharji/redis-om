@@ -35,7 +35,6 @@ struct Customer {
 
 // Now that we have a `Customer` model, let's use it to save customer data to Redis.
 
-
 // First, we create a new `Customer` object:
 let mut jane = Customer {
     id: "".into(), // will be auto generated when it's empty
@@ -67,6 +66,9 @@ assert_eq!(jane_db, jane);
 ```
 
 ### Json
+
+redis-om support json data type through `redis_om::JsonModel`. It requires that the type
+derives `serde::Deserialize` as well as `serde::Serialize`.
 
 ```rust
 use redis_om::JsonModel;
