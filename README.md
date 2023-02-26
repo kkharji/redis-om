@@ -61,3 +61,27 @@ Customer::delete(&jane.id, &mut conn).unwrap();
 assert_eq!(jane_db, jane);
 ```
 
+## Features
+
+- Plays well with serde annotations such as rename, rename_all, alais and many more.
+- Use struct static function todo all the required crud operations.
+- Serialize hash model list-like and dict like structs as prefix keys without needing JSON.
+
+
+## Roadmap
+
+### 0.1.0
+
+- [x] Hash Models
+- [ ] Support serliazing/deserializing fields using serde
+- [ ] Json Model
+- [ ] Stream Model
+
+### 0.2.0
+- [ ] RedisSearch Integration
+- [ ] Async support
+- [ ] internally managed connections, i.e. no requirement to pass conn around.
+- [ ] Support validation
+
+### 0.3.0
+- [ ] List Model
