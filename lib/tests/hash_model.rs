@@ -97,6 +97,7 @@ fn basic_with_custom_prefix_and_pk() -> Result {
 #[test]
 fn all_primary_keys() -> Result {
     #[derive(HashModel, Debug)]
+    #[redis(prefix_key = "accounts")]
     struct Account {
         id: String,
         first_name: String,
