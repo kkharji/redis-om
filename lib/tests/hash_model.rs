@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use redis::Commands;
 use redis_om::redis::Value;
 use redis_om::redis::{FromRedisValue, ToRedisArgs};
@@ -147,6 +149,38 @@ fn all_primary_keys() -> Result {
                 .collect::<Vec<_>>()
         );
     }
+
+    Ok(())
+}
+
+#[test]
+fn expiring_keys() -> Result {
+    #[derive(HashModel)]
+    #[redis(prefix_key = "customers")]
+    struct Cusotmer {
+        #[redis(primary_key)]
+        pk: String,
+        first_name: String,
+        last_name: String,
+        interests: Vec<String>,
+    }
+
+    let mut customer = Cusotmer {
+        pk: "".into(),
+        first_name: "Joe".into(),
+        last_name: "Doe".into(),
+        interests: vec!["Gaming".into(), "SandCasting".into(), "Writing".into()],
+    };
+
+    let mut conn = client()?.get_connection()?;
+
+    customer.save(&mut conn)?;
+    customer.expire(1, &mut conn)?;
+    std::thread::sleep(Duration::from_secs(1));
+
+    let count = Cusotmer::all_pks(&mut conn)?.count();
+
+    assert_eq!(count, 0);
 
     Ok(())
 }

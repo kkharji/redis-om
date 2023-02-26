@@ -1,6 +1,5 @@
 use crate::shared::{Commands, Conn};
 use redis::RedisResult;
-use std::time::Duration;
 
 /// Shared Redis Object Model
 pub trait RedisModel: redis::ToRedisArgs + redis::FromRedisValue {
@@ -37,10 +36,9 @@ pub trait RedisModel: redis::ToRedisArgs + redis::FromRedisValue {
     }
 
     /// Expire Self at given duration
-    fn _expire(&self, duration: Duration, conn: &mut Conn) -> RedisResult<()> {
+    fn _expire(&self, secs: usize, conn: &mut Conn) -> RedisResult<()> {
         let key = self._get_redis_key();
-        let seconds = duration.as_secs() as usize;
 
-        conn.expire(key, seconds)
+        conn.expire(key, secs)
     }
 }

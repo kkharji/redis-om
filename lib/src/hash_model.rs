@@ -52,4 +52,9 @@ pub trait HashModel: RedisModel + RedisSearchModel {
     fn redissearch_schema() -> &'static str {
         <Self as RedisSearchModel>::REDIS_SEARCH_SCHEMA
     }
+
+    /// Expire Self at given duration
+    fn expire(&self, secs: usize, conn: &mut Conn) -> RedisResult<()> {
+        self._expire(secs, conn)
+    }
 }
