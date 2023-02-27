@@ -65,7 +65,7 @@ pub trait JsonModel: RedisModel + RedisSearchModel + Serialize + DeserializeOwne
 
     /// Redis search schema
     fn redissearch_schema() -> &'static str {
-        <Self as RedisSearchModel>::REDIS_SEARCH_SCHEMA
+        <Self as RedisSearchModel>::_REDIS_SEARCH_SCHEMA
     }
 
     /// Expire Self at given duration

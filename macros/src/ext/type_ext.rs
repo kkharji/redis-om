@@ -31,7 +31,11 @@ impl TypeExt for Type {
     where
         Ident: PartialEq<I>,
     {
-        let Some(path) = self.path() else { return false; };
+        let mut ty = self;
+        if self.is_option() {
+            ty = self.get_inner_type().unwrap();
+        }
+        let Some(path) = ty.path() else { return false; };
         let Some(last) = path.segments.last() else {return false;};
 
         last.ident == *ident

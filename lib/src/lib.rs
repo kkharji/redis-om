@@ -17,7 +17,6 @@ pub use redis_om_macros::HashModel;
 #[cfg(feature = "json")]
 pub use redis_om_macros::JsonModel;
 pub use redis_om_macros::RedisModel;
-pub use redis_om_macros::RedisSearchModel;
 
 /// Derive procedural macro that automatically generate implementation for
 ///

@@ -173,3 +173,40 @@ fn expiring_keys() -> Result {
 
     Ok(())
 }
+
+#[test]
+fn test_redis_schema() -> Result {
+    #[derive(JsonModel, Serialize, Deserialize, Debug)]
+    #[allow(dead_code)]
+    struct Member {
+        #[redis(index)]
+        id: String,
+        #[redis(index)]
+        first_name: String,
+        #[redis(index)]
+        last_name: String,
+        #[redis(index)]
+        email: String,
+        #[redis(index)]
+        age: u32,
+        #[redis(index, full_text_search, default = "String::default")]
+        bio: Option<String>,
+        join_date: String,
+    }
+
+    assert_eq!(
+        Member::redissearch_schema(),
+        &format!(
+            "ON JSON PREFIX 1 Member SCHEMA \
+               $.id AS id TAG SEPARATOR | \
+               $.first_name AS first_name TAG SEPARATOR | \
+               $.last_name AS last_name TAG SEPARATOR | \
+               $.email AS email TAG SEPARATOR | \
+               $.age AS age NUMERIC \
+               $.bio AS bio TAG SEPARATOR | \
+               $.bio AS bio_fts TEXT"
+        )
+    );
+
+    Ok(())
+}

@@ -185,3 +185,36 @@ fn expiring_keys() -> Result {
 
     Ok(())
 }
+
+#[test]
+fn test_redis_search_schema() -> Result {
+    #[derive(HashModel, Debug)]
+    #[allow(dead_code)]
+    struct Address {
+        #[redis(index)]
+        id: String,
+        #[redis(index)]
+        a: String,
+        #[redis(index, full_text_search)]
+        b: String,
+        #[redis(index, sortable)]
+        c: u32,
+        #[redis(index)]
+        d: f32,
+    }
+
+    assert_eq!(
+        Address::redissearch_schema(),
+        format!(
+            "ON HASH PREFIX 1 Address SCHEMA \
+                id TAG SEPARATOR | \
+                a TAG SEPARATOR | \
+                b TAG SEPARATOR | \
+                b AS b_fts TEXT \
+                c NUMERIC SORTABLE \
+                d NUMERIC"
+        )
+    );
+
+    Ok(())
+}
