@@ -133,12 +133,12 @@ assert_eq!(john_db, john);
 
 - [x] Hash Models
 - [x] Json Model
-- [ ] Support serliazing/deserializing fields using serde for hash models
 - [ ] Stream Model
+- [ ] Async support
+- [ ] serializing/deserializing hash model fields using serde for hash models
 
 ### 0.2.0
-- [ ] RedisSearch Integration
-- [ ] Async support
+- [ ] Correctly support RedisSearch Integration with embedded types
 - [ ] Internal managed connections, i.e. no requirement to pass conn around.
 - [ ] Values Validation Support
 
