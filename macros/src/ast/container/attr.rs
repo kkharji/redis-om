@@ -10,7 +10,7 @@ use NestedMeta::*;
 
 /// Represents struct or enum attributes supported by redis-om.
 pub struct ContainerAttr {
-    /// Redis database prefix
+    /// Redis database prefix key or redis stream name
     pub prefix_key: String,
     /// Which key is considered primary key
     pub primary_key: String,
@@ -29,7 +29,7 @@ impl ContainerAttr {
         let mut default: Attr<Default> = Attr::new(ctx, DEFUALT);
         let mut primary_key: Attr<String> = Attr::new(ctx, PRIMARY_KEY);
         let mut prefix_key: Attr<String> = Attr::new(ctx, PREFIX_KEY);
-        let mut model_type: Attr<Derive> = Attr::new(ctx, PREFIX_KEY);
+        let mut model_type: Attr<Derive> = Attr::new(ctx, MODEL_TYPE);
         let mut rename_all_ser_rule = Attr::new(ctx, RENAME_ALL);
         let mut rename_all_de_rule = Attr::new(ctx, RENAME_ALL);
 
@@ -102,6 +102,11 @@ impl ContainerAttr {
 
                 // Parse `#[redis(prefix_key = "...")]`
                 Meta(NameValue(nv)) if prefix_key.eq(&nv.path) => {
+                    prefix_key.set_opt(&nv.path, nv.lit.to_string());
+                }
+
+                // Parse `#[redis(stream_key = "...")]`
+                Meta(NameValue(nv)) if &nv.path == KEY => {
                     prefix_key.set_opt(&nv.path, nv.lit.to_string());
                 }
 

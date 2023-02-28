@@ -12,6 +12,7 @@ pub mod symbols {
     pub const DEFUALT: Symbol = Symbol("default");
     pub const PRIMARY_KEY: Symbol = Symbol("primary_key");
     pub const PREFIX_KEY: Symbol = Symbol("prefix_key");
+    pub const KEY: Symbol = Symbol("key");
     pub const MODEL_TYPE: Symbol = Symbol("model_type");
     pub const INDEX: Symbol = Symbol("index");
     pub const SORTABLE: Symbol = Symbol("sortable");

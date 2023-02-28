@@ -148,9 +148,6 @@ fn fields_from_ast<'a>(
             .find(|f| f.attrs.name.serialize_name() == "id")
         {
             id_field.attrs.primary_key = true;
-        } else {
-            let msg = format!("A primary field doesn't exists, either add `id` field or annotate a field `primary_key`");
-            cx.error_spanned_by("", msg);
         };
     }
     fields
