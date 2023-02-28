@@ -1,4 +1,3 @@
-use crate::shared::{Commands, Conn};
 use redis::RedisResult;
 
 /// Shared Redis Object Model
@@ -36,9 +35,12 @@ pub trait RedisModel {
     }
 
     /// Expire Self at given duration
-    fn _expire(&self, secs: usize, conn: &mut Conn) -> RedisResult<()> {
+    fn _expire_cmd(&self, secs: usize) -> RedisResult<redis::Cmd> {
         let key = self._get_redis_key();
+        let mut cmd = redis::cmd("EXPIRE");
 
-        conn.expire(key, secs)
+        cmd.arg(key).arg(secs);
+
+        Ok(cmd)
     }
 }

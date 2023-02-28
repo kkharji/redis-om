@@ -21,7 +21,12 @@ need_stdout = false
 watch = ["tests", "benches", "examples"]
 
 [jobs.test]
-command = ["cargo", "test", "--color", "always", "--all-features"]
+command = ["cargo", "test", "--color", "always", "--features", "json"]
+need_stdout = true
+watch = ["tests"]
+
+[jobs.test_async]
+command = ["cargo", "test", "--color", "always", "--features", "json,tokio-comp"]
 need_stdout = true
 watch = ["tests"]
 
@@ -39,3 +44,4 @@ i = "job:initial"
 c = "job:clippy"
 d = "job:doc-open"
 t = "job:test"
+r = "job:test_async"

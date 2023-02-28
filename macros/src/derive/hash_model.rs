@@ -1,5 +1,5 @@
 use crate::ast::{Container, Ctx, Data, Field, FieldAttr, Style};
-use crate::ext::TypeExt;
+use crate::ext::{AttributeExt, TypeExt};
 use crate::util::parse::{self, AttributeMap};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
@@ -14,6 +14,9 @@ pub fn derive(ctx: &Ctx, cont: &Container) -> Result<TokenStream, ()> {
     // TODO: Find a way to ignore types already implements default trait.
 
     let mut stream = TokenStream::new();
+    let mut attributes = Vec::<syn::Attribute>::new();
+    #[cfg(feature = "aio")]
+    attributes.push(syn::Attribute::from_token_stream(quote!(#[::redis_om::async_trait])).unwrap());
 
     crate::value::derive(ctx, cont)?.to_tokens(&mut stream);
     crate::redis_model::derive(ctx, cont)?.to_tokens(&mut stream);
@@ -21,6 +24,7 @@ pub fn derive(ctx: &Ctx, cont: &Container) -> Result<TokenStream, ()> {
 
     Ok(quote! {
         #stream
+        #(#attributes)*
         impl ::redis_om::HashModel for #type_name { }
 
     })
