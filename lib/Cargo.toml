@@ -16,6 +16,12 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = []
 json = [ "redis/json", "serde", "serde_json", "redis-om-macros/json" ]
+aio = [ "redis/aio", "async-trait", "redis-om-macros/aio", "futures" ]
+tokio-comp = ["aio", "redis/tokio-comp"]
+async-std-comp = ["aio", "redis/async-std-comp"]
+tls = ["redis/tls"]
+tokio-native-tls-comp = [ "redis/tokio-native-tls-comp" ]
+async-std-tls-comp = [ "redis/async-std-tls-comp" ]
 
 [dependencies]
 tap             = { version = "1.0" }
@@ -25,6 +31,8 @@ redis           = { version = "0.22.1" }
 rusty_ulid      = { version = "2.0.0" }
 serde           = { version = "1", features = [ "derive" ], optional = true }
 serde_json      = { version = "1", optional = true }
+async-trait     = { version = "0.1.64", optional = true }
+futures         = { version = "0.3.26", optional = true }
 
 [dev-dependencies]
 tokio          = { version = "1.25.0", features = ["full"] }

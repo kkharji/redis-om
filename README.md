@@ -6,15 +6,28 @@ The Unofficial Redis Object mapping that makes it easy to model Redis data in Ru
 
 Alpha
 
-## 💡 Why Redis OM?
+## Async Support
 
-Redis OM provides high-level abstractions that make it easy to model and query data in Redis with Rust.
+To enable asynchronous clients a feature for the underlying feature need to be activated.
 
-## 📇 Modeling Your Data
+```toml
+# if you use tokio
+redis-om = { version = "*", features = ["tokio-comp"] }
 
-Redis OM contains powerful declarative models that give you data serialization and persistence to Redis.
+# if you use async-std
+redis-om = { version = "*", features = ["async-std-comp"] }
+```
 
-Check out usage section for example on using redis-om-rust in rust applications.
+## TLS Support
+```toml
+redis-om = { version = "*", features = ["tls"] }
+
+# if you use tokio
+redis-om = { version = "*", features = ["tokio-native-tls-comp"] }
+
+# if you use async-std
+redis-om = { version = "*", features = ["async-std-tls-comp"] }
+```
 
 ## Features
 

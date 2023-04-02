@@ -1,5 +1,5 @@
 use crate::ast::{Container, Ctx, Data, Field, FieldAttr, Style};
-use crate::ext::TypeExt;
+use crate::ext::{AttributeExt, TypeExt};
 use crate::util::parse::{self, AttributeMap};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
@@ -12,9 +12,13 @@ pub fn derive(ctx: &Ctx, cont: &Container) -> Result<TokenStream, ()> {
     let mut stream = TokenStream::new();
     crate::redis_model::derive(ctx, cont)?.to_tokens(&mut stream);
     redis_schema::derive(ctx, cont)?.to_tokens(&mut stream);
+    let mut attributes = Vec::<syn::Attribute>::new();
+    #[cfg(feature = "aio")]
+    attributes.push(syn::Attribute::from_token_stream(quote!(#[::redis_om::async_trait])).unwrap());
 
     Ok(quote! {
         #stream
+        #(#attributes)*
         impl ::redis_om::JsonModel for #type_name { }
     })
 }

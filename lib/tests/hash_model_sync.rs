@@ -1,9 +1,11 @@
-#![cfg(feature = "json")]
+#![cfg(all(not(feature = "aio"), feature = "json"))]
+
 use std::time::Duration;
 
 use redis::Commands;
-use redis_om::JsonModel;
-use serde::{Deserialize, Serialize};
+use redis_om::redis::Value;
+use redis_om::redis::{FromRedisValue, ToRedisArgs};
+use redis_om::HashModel;
 
 type Result<T = (), E = Box<dyn std::error::Error>> = std::result::Result<T, E>;
 
@@ -13,7 +15,7 @@ fn client() -> Result<redis::Client> {
 
 #[test]
 fn basic_with_no_options() -> Result {
-    #[derive(JsonModel, Serialize, Deserialize)]
+    #[derive(HashModel)]
     #[redis(prefix_key = "users")]
     struct Account {
         id: String,
@@ -28,6 +30,18 @@ fn basic_with_no_options() -> Result {
         last_name: "Doe".into(),
         interests: vec!["Gaming".into(), "SandCasting".into(), "Writing".into()],
     };
+
+    let serialized = account
+        .to_redis_args()
+        .into_iter()
+        .map(|v| Value::Data(v))
+        .collect::<Vec<_>>();
+    let deserialized = Account::from_redis_value(&Value::Bulk(serialized))?;
+
+    // Ensure that values are identical
+    assert_eq!(account.first_name, deserialized.first_name);
+    assert_eq!(account.last_name, deserialized.last_name);
+    assert_eq!(account.interests, deserialized.interests);
 
     let mut conn = client()?.get_connection()?;
 
@@ -46,7 +60,7 @@ fn basic_with_no_options() -> Result {
 
 #[test]
 fn basic_with_custom_prefix_and_pk() -> Result {
-    #[derive(JsonModel, Serialize, Deserialize)]
+    #[derive(HashModel)]
     struct Account {
         #[redis(primary_key)]
         pk: String,
@@ -84,7 +98,7 @@ fn basic_with_custom_prefix_and_pk() -> Result {
 
 #[test]
 fn all_primary_keys() -> Result {
-    #[derive(JsonModel, Serialize, Deserialize, Debug)]
+    #[derive(HashModel, Debug)]
     #[redis(prefix_key = "accounts")]
     struct Account {
         id: String,
@@ -144,7 +158,7 @@ fn all_primary_keys() -> Result {
 
 #[test]
 fn expiring_keys() -> Result {
-    #[derive(JsonModel, Serialize, Deserialize)]
+    #[derive(HashModel)]
     #[redis(prefix_key = "customers")]
     struct Cusotmer {
         #[redis(primary_key)]
@@ -175,36 +189,32 @@ fn expiring_keys() -> Result {
 }
 
 #[test]
-fn test_redis_schema() -> Result {
-    #[derive(JsonModel, Serialize, Deserialize, Debug)]
+fn test_redis_search_schema() -> Result {
+    #[derive(HashModel, Debug)]
     #[allow(dead_code)]
-    struct Member {
+    struct Address {
         #[redis(index)]
         id: String,
         #[redis(index)]
-        first_name: String,
+        a: String,
+        #[redis(index, full_text_search)]
+        b: String,
+        #[redis(index, sortable)]
+        c: u32,
         #[redis(index)]
-        last_name: String,
-        #[redis(index)]
-        email: String,
-        #[redis(index)]
-        age: u32,
-        #[redis(index, full_text_search, default = "String::default")]
-        bio: Option<String>,
-        join_date: String,
+        d: f32,
     }
 
     assert_eq!(
-        Member::redissearch_schema(),
-        &format!(
-            "ON JSON PREFIX 1 Member SCHEMA \
-               $.id AS id TAG SEPARATOR | \
-               $.first_name AS first_name TAG SEPARATOR | \
-               $.last_name AS last_name TAG SEPARATOR | \
-               $.email AS email TAG SEPARATOR | \
-               $.age AS age NUMERIC \
-               $.bio AS bio TAG SEPARATOR | \
-               $.bio AS bio_fts TEXT"
+        Address::redissearch_schema(),
+        format!(
+            "ON HASH PREFIX 1 Address SCHEMA \
+                id TAG SEPARATOR | \
+                a TAG SEPARATOR | \
+                b TAG SEPARATOR | \
+                b AS b_fts TEXT \
+                c NUMERIC SORTABLE \
+                d NUMERIC"
         )
     );
 

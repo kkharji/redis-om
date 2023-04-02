@@ -16,6 +16,7 @@ proc-macro = true
 [features]
 default = []
 json = []
+aio = []
 
 [dependencies]
 proc-macro2    = { version = "1.0" }
