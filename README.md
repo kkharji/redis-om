@@ -16,7 +16,19 @@ Redis OM contains powerful declarative models that give you data serialization a
 
 Check out usage section for example on using redis-om-rust in rust applications.
 
+## Features
+
+- [serde](https://serde.rs/) interop annotations such as `rename`, `rename_all`, alias and many more.
+- Use struct methods todo all kind of crud and redis specific operations.
+- Serialize [hash](#hash) model list-like and dict-like structs as prefix keys without needing JSON (i.e. list.1, account.balance).
+- Support for [json](#json) datatype
+- Support for [stream](#json) datatype
+
 ## Usage
+
+- [hash datatype macro usage](#Hash)
+- [Json datatype macro usage](#json)
+- [Stream datatype macro usage](#Hash)
 
 ### Hash
 
@@ -118,14 +130,61 @@ Account::delete(&john.id, &mut conn).unwrap();
 
 assert_eq!(john_db, john);
 ```
+### Stream
 
-## Features
+redis-om support json data type through `redis_om::StreamModel`. It requires that any nested type to derives `redis_om::RedisTransportValue`.
 
-- serde interop annotations such as rename, rename_all, alias and many more.
-- Use struct static function todo all the required crud operations.
-- Serialize hash model list-like and dict-like structs as prefix keys without needing JSON
-  (i.e. list.1, account.balance).
+```rust
+use redis_om::{RedisTransportValue, StreamModel};
 
+/// An enum of room service kind
+#[derive(RedisTransportValue)]
+pub enum RoomServiceJob {
+    Clean,
+    ExtraTowels,
+    ExtraPillows,
+    FoodOrder,
+}
+
+/// An enum of room service kind
+#[derive(StreamModel)]
+#[redis(key = "room")] // rename stream key in redis
+pub struct RoomServiceEvent {
+    status: String,
+    room: usize,
+    job: RoomServiceJob,
+}
+
+// Get client
+let client = redis::Client::open("redis://127.0.0.1/").unwrap();
+// Get connection
+let mut conn = client.get_connection().unwrap();
+
+// Create a new instance of Room service Event Manager with consumer group.
+// Note: consumer name is auto generated,
+// use RoomServiceEventManager::new_with_consumer_name, // for a custom name
+let manager = RoomServiceEventManager::new("Staff");
+
+// Ensure the consumer group
+manager.ensure_group_stream(&mut conn).unwrap();
+
+// Create new event
+let event = RoomServiceEvent {
+    status: "pending".into(),
+    room: 3,
+    job: RoomServiceJob::Clean,
+};
+
+// Publish the event to the RoomServiceEvent redis stream
+RoomServiceEventManager::publish(&event, &mut conn).unwrap();
+
+// Read with optional read_count: Option<usize>, block_interval: Option<usize>
+let read = manager.read(None, None, &mut conn).unwrap();
+// Get first incoming event data
+let incoming_event = read.first().unwrap().data::<RoomServiceEvent>().unwrap();
+
+assert_eq!(incoming_event.room, event.room);
+```
 
 ## Roadmap
 
@@ -133,14 +192,13 @@ assert_eq!(john_db, john);
 
 - [x] Hash Models
 - [x] Json Model
-- [ ] Stream Model
-- [ ] Async support
-- [ ] serializing/deserializing hash model fields using serde for hash models
+- [x] Stream Model
+- [x] Async support
 
 ### 0.2.0
+- [ ] Multi Stream Manager
+- [ ] stream model enum support
+- [ ] serializing/deserializing hash model fields using serde for hash models
 - [ ] Correctly support RedisSearch Integration with embedded types
 - [ ] Internal managed connections, i.e. no requirement to pass conn around.
 - [ ] Values Validation Support
-
-### 0.3.0
-- [ ] List Model
