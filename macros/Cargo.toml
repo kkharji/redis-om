@@ -6,8 +6,8 @@ edition = "2021"
 authors = ["kkharji <kkharji@protonmail.com>"]
 license = "MIT"
 documentation = "https://docs.rs/redis-om-macros"
-homepage = "https://github.com/kkharji/redis-om-rust"
-repository = "https://github.com/kkharji/redis-om-rust"
+homepage = "https://github.com/kkharji/redis-om"
+repository = "https://github.com/kkharji/redis-om"
 readme = "../README.md"
 
 [lib]

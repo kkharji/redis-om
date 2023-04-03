@@ -1,51 +1,69 @@
-# redis-om-rust
+# redis-om
+[![MIT licensed][mit-badge]][mit-url]
+[![Build status][gh-actions-badge]][gh-actions-url]
+[![Crates.io][crates-badge]][crates-url]
 
-The Unofficial Redis Object mapping that makes it easy to model Redis data in Rust. _inspired by [redis-om-python](https://github.com/redis/redis-om-python)_
+[crates-badge]: https://img.shields.io/crates/v/redis-om.svg
+[crates-url]: https://crates.io/crates/redis-om
+[mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+[mit-url]: LICENSE
+[gh-actions-badge]: https://github.com/kkharji/redis-om/workflows/Continuous%20integration/badge.svg
+[gh-actions-url]: https://github.com/kkharji/redis-om/actions?query=workflow%3A%22Continuous+integration%22
 
-## State
+A Rust/Redis ORM-style library that simplify the development process and reduce the amount of boilerplate code needed to build programs that leverage [redis] powerful capabilities and use cases.
 
-Alpha
+**Status**: *WIP, fully testsed, possible breaking changes, stay tuned*
 
-## Async Support
+**Features**
 
-To enable asynchronous clients a feature for the underlying feature need to be activated.
+- ORM-style API to define/manipulate [redis data structures] (e.g. hashes, json, streams) using [derive macros].
+- Automatic serialization/desalinization between Redis data and rust objects.
+- Interoperability with [serde](https://serde.rs/), e.g. using `rename`, `rename_all` or `serde`.
+- Nested [hash datatype](#hash) support (e.g. `list.1` or nested models `account.balance` as keys).
+
+**Usage**
+
+- [Getting Started](#getting-started)
+- [Using Redis's Hash Datatype](#hash)
+- [Using Redis's Json Datatype](#json)
+- [Using Redis's Stream Datatype](#stream)
+
+**Roadmap**
+
+- <kbd>0.1.0</kbd>
+    - [x] Enable users to define and derive Hash Model with most common methods
+    - [x] Enable users to define and derive JSON Model with most common methods
+    - [x] Enable users to define and derive streams with managers to publish-to/read-from them.
+    - [x] Support users to choose between asynchronous and synchronous runtime.
+- <kbd>0.2.0</kbd>
+    - [ ] Enable Multi-Stream Manager Support to enable users to combine multiple `RedisModels`.
+    - [ ] Support Serializing/deserializing `HashModel` complex fields using serde.
+    - [ ] Support `RedisSearch` and provide query-building API.
+    - [ ]  .....
+- <kbd>0.3.0</kbd>
+    - [ ] Support validation of struct fields and enum values (most likely using [validator library]).
+    - [ ] .....
+
+
+## Getting Started
 
 ```toml
-# if you use tokio
-redis-om = { version = "*", features = ["tokio-comp"] }
-
-# if you use async-std
-redis-om = { version = "*", features = ["async-std-comp"] }
-```
-
-## TLS Support
-```toml
+redis-om = { version = "*" }
+# TLS support with async-std
 redis-om = { version = "*", features = ["tls"] }
-
-# if you use tokio
+# async support with tokio
+redis-om = { version = "*", features = ["tokio-comp"] }
+# async support with async-std
+redis-om = { version = "*", features = ["async-std-comp"] }
+# TLS and async support with tokio
 redis-om = { version = "*", features = ["tokio-native-tls-comp"] }
-
-# if you use async-std
+# TLS support with async-std
 redis-om = { version = "*", features = ["async-std-tls-comp"] }
 ```
 
-## Features
+## Hash
 
-- [serde](https://serde.rs/) interop annotations such as `rename`, `rename_all`, alias and many more.
-- Use struct methods todo all kind of crud and redis specific operations.
-- Serialize [hash](#hash) model list-like and dict-like structs as prefix keys without needing JSON (i.e. list.1, account.balance).
-- Support for [json](#json) datatype
-- Support for [stream](#json) datatype
-
-## Usage
-
-- [hash datatype macro usage](#Hash)
-- [Json datatype macro usage](#json)
-- [Stream datatype macro usage](#Hash)
-
-### Hash
-
-```rust
+```rust ignore
 use redis_om::HashModel;
 
 #[derive(HashModel, Debug, PartialEq, Eq)]
@@ -71,7 +89,7 @@ let mut jane = Customer {
 };
 
 // Get client
-let client = redis::Client::open("redis://127.0.0.1/").unwrap();
+let client = redis_om::Client::open("redis://127.0.0.1/").unwrap();
 // Get connection
 let mut conn = client.get_connection().unwrap();
 
@@ -90,12 +108,12 @@ Customer::delete(&jane.id, &mut conn).unwrap();
 assert_eq!(jane_db, jane);
 ```
 
-### Json
+## Json
 
 redis-om support json data type through `redis_om::JsonModel`. It requires that the type
 derives `serde::Deserialize` as well as `serde::Serialize`.
 
-```rust
+```rust ignore
 use redis_om::JsonModel;
 use serde::{Deserialize, Serialize};
 
@@ -125,7 +143,7 @@ let mut john = Account {
 };
 
 // Get client
-let client = redis::Client::open("redis://127.0.0.1/").unwrap();
+let client = redis_om::Client::open("redis://127.0.0.1/").unwrap();
 // Get connection
 let mut conn = client.get_connection().unwrap();
 
@@ -143,11 +161,11 @@ Account::delete(&john.id, &mut conn).unwrap();
 
 assert_eq!(john_db, john);
 ```
-### Stream
+## Stream
 
 redis-om support json data type through `redis_om::StreamModel`. It requires that any nested type to derives `redis_om::RedisTransportValue`.
 
-```rust
+```rust ignore
 use redis_om::{RedisTransportValue, StreamModel};
 
 /// An enum of room service kind
@@ -169,7 +187,7 @@ pub struct RoomServiceEvent {
 }
 
 // Get client
-let client = redis::Client::open("redis://127.0.0.1/").unwrap();
+let client = redis_om::Client::open("redis://127.0.0.1/").unwrap();
 // Get connection
 let mut conn = client.get_connection().unwrap();
 
@@ -198,25 +216,13 @@ let read = manager.read(None, None, &mut conn).unwrap();
 let incoming_event = read.first().unwrap();
 // Get first incoming event data
 let incoming_event_data = incoming_event.data::<RoomServiceEvent>().unwrap();
-// Acknowledge that you received the event, so other in the consumer group don't get it
-incoming_event.ack(&mut conn).unwrap();
+// Acknowledge that you received the event, so other in the consumers don't get it
+RoomServiceEventManager::ack(manager.group_name(), &[&incoming_event.id], &mut conn).unwrap();
 
-assert_eq!(incoming_event.room, event.room);
+assert_eq!(incoming_event_data.room, event.room);
 ```
 
-## Roadmap
-
-### 0.1.0
-
-- [x] Hash Models
-- [x] Json Model
-- [x] Stream Model
-- [x] Async support
-
-### 0.2.0
-- [ ] Multi Stream Manager
-- [ ] stream model enum support
-- [ ] serializing/deserializing hash model fields using serde for hash models
-- [ ] Correctly support RedisSearch Integration with embedded types
-- [ ] Internal managed connections, i.e. no requirement to pass conn around.
-- [ ] Values Validation Support
+[derive macros]: https://doc.rust-lang.org/reference/procedural-macros.html#derive-macros
+[redis data structures]: https://redis.com/redis-enterprise/data-structures/
+[redis]: https://redis.com
+[validator library]: https://crates.io/crates/validator

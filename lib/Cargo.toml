@@ -1,32 +1,40 @@
 [package]
 name = "redis-om"
-description = "The Unofficial Object mapping for Redis and Rust. Inspired by redis-om-python"
+description = "Redis ORM-style library that simplify the development process and reduce the amount of boilerplate code needed to build programs that leverage [redis] powerful capabilities and use cases."
 version = "0.1.0"
 edition = "2021"
 authors = [ "kkharji <kkharji@protonmail.com>"]
 license = "MIT"
 documentation = "https://docs.rs/redis-om"
-homepage = "https://github.com/kkharji/redis-om-rust"
-repository = "https://github.com/kkharji/redis-om-rust"
+homepage = "https://github.com/kkharji/redis-om"
+repository = "https://github.com/kkharji/redis-om"
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = []
+default = [ "tokio-comp" ]
+### Enables json model support
 json = [ "redis/json", "serde", "serde_json", "redis-om-macros/json" ]
+##! ### Internal features
+### Enables aio (used in tokio-native-tls-comp, tokio-comp)
 aio = [ "redis/aio", "async-trait", "redis-om-macros/aio", "futures" ]
+### Enables async-tokio support
 tokio-comp = ["aio", "redis/tokio-comp"]
+### Enables async-std support
 async-std-comp = ["aio", "redis/async-std-comp"]
+### Enables tls support
 tls = ["redis/tls"]
+### Enables async-tokio with tls support
 tokio-native-tls-comp = [ "redis/tokio-native-tls-comp" ]
+### Enables async-std with tls support
 async-std-tls-comp = [ "redis/async-std-tls-comp" ]
 
 [dependencies]
 tap             = { version = "1.0" }
 thiserror       = { version = "1.0" }
-redis-om-macros = { path = "../macros" }
+redis-om-macros = { version = "0.1.0", path = "../macros" }
 redis           = { version = "0.22.1" }
 rusty_ulid      = { version = "2.0.0" }
 serde           = { version = "1", features = [ "derive" ], optional = true }
@@ -38,6 +46,3 @@ futures         = { version = "0.3.26", optional = true }
 tokio          = { version = "1.25.0", features = ["full"] }
 trybuild       = { version = "1.0.77" }
 redis-swapplex = { version = "0.4.0" }
-
-[[example]]
-name = "readme"

@@ -174,7 +174,7 @@ async fn expiring_keys() -> Result {
 
     customer.save(&mut conn).await?;
     customer.expire(1, &mut conn).await?;
-    std::thread::sleep(Duration::from_secs(1));
+    tokio::time::sleep(Duration::from_secs(3)).await;
 
     let count = Cusotmer::all_pks(&mut conn).await?.count().await;
 

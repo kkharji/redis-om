@@ -1,0 +1,65 @@
+name: Continuous integration
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  REDIS_RS_REDIS_JSON_PATH: "/tmp/librejson.so"
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check --all-features
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        redis:
+          - 6.2.6-v6
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v1
+      - name: Cache redis
+        id: cache-redis
+        uses: actions/cache@v2
+        with:
+          path: |
+            /usr/bin/redis-cli
+            /usr/bin/redis-server
+          key: ${{ runner.os }}-redis
+      - name: Cache RedisJSON
+        id: cache-redisjson
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/librejson.so
+          key: ${{ runner.os }}-redisjson
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.5.0
+        with:
+          redis-image: redis/redis-stack
+          redis-version: ${{ matrix.redis }}
+      - run: cargo test
+      - run: cargo test --manifest-path lib/Cargo.toml
+      - run: cargo test --manifest-path lib/Cargo.toml --features json
+      - run: cargo test --manifest-path lib/Cargo.toml --features json,tokio-comp
+      - run: cargo test --all-features

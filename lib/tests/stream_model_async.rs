@@ -1,4 +1,4 @@
-#![cfg(feature = "aio")]
+#![cfg(feature = "tokio-comp")]
 
 use redis_om::{RedisTransportValue, StreamModel};
 use std::error::Error;

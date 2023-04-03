@@ -1,8 +1,5 @@
-//! The Unofficial Redis Object mapping that makes it easy to model Redis data in Rust. _inspired by [redis-om-python](https://github.com/redis/redis-om-python)_
-
 #![deny(missing_docs, unstable_features)]
-// #![doc = include_str!("../README.md")]
-
+#![doc = include_str!("../README.md")]
 mod hash_model;
 #[cfg(feature = "json")]
 mod json_model;
@@ -71,8 +68,6 @@ pub use json_model::*;
 pub use redis_model::RedisModel;
 pub use redissearch_model::RedisSearchModel;
 pub use stream_model::StreamModel;
-
-
 
 #[cfg(feature = "aio")]
 pub use async_trait::async_trait;

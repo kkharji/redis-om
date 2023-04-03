@@ -8,7 +8,7 @@ use super::reply::StreamReadReply;
 use super::transformers;
 
 impl Message {
-    pub async fn ack<C: ConnectionLike + Send, Data: StreamModel>(
+    pub async fn ack<Data: StreamModel, C: ConnectionLike + Send>(
         &self,
         conn: &mut C,
     ) -> RedisResult<()> {

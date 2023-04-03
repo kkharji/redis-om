@@ -8,7 +8,7 @@ use super::reply::StreamReadReply;
 use super::transformers;
 
 impl Message {
-    pub fn ack<C: ConnectionLike, Data: StreamModel>(&self, conn: &mut C) -> RedisResult<()> {
+    pub fn ack<Data: StreamModel, C: ConnectionLike>(&self, conn: &mut C) -> RedisResult<()> {
         Data::ack(&self.group, &[&self.id], conn)
     }
 }
@@ -140,4 +140,3 @@ pub trait StreamModel: Sized {
             .map(transformers::stream_range_to_messages)?
     }
 }
-

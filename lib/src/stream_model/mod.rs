@@ -31,7 +31,8 @@ mod cmds {
         cmd.arg("CREATE")
             .arg(S::stream_key())
             .arg(s.group_name())
-            .arg("$");
+            .arg("$")
+            .arg("MKSTREAM");
 
         Ok(cmd)
     }
