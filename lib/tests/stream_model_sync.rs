@@ -1,3 +1,5 @@
+#![cfg(not(feature = "aio"))]
+
 use redis_om::{RedisTransportValue, StreamModel};
 use std::error::Error;
 

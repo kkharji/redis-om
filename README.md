@@ -193,8 +193,13 @@ RoomServiceEventManager::publish(&event, &mut conn).unwrap();
 
 // Read with optional read_count: Option<usize>, block_interval: Option<usize>
 let read = manager.read(None, None, &mut conn).unwrap();
+
+// Get first incoming event
+let incoming_event = read.first().unwrap();
 // Get first incoming event data
-let incoming_event = read.first().unwrap().data::<RoomServiceEvent>().unwrap();
+let incoming_event_data = incoming_event.data::<RoomServiceEvent>().unwrap();
+// Acknowledge that you received the event, so other in the consumer group don't get it
+incoming_event.ack(&mut conn).unwrap();
 
 assert_eq!(incoming_event.room, event.room);
 ```

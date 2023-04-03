@@ -1,59 +1,48 @@
 mod message;
 mod reply;
 
-use crate::shared::Conn;
-use redis::streams::{StreamMaxlen, StreamReadOptions};
-use redis::{Commands, FromRedisValue, RedisResult, ToRedisArgs};
-use tap::Pipe;
+#[cfg(feature = "aio")]
+mod r#async;
+#[cfg(not(feature = "aio"))]
+mod sync;
 
-use message::Message;
-use reply::StreamReadReply;
+#[cfg(feature = "aio")]
+pub use r#async::StreamModel;
+#[cfg(not(feature = "aio"))]
+pub use sync::StreamModel;
 
-use self::reply::StreamRangeReply;
+mod cmds {
+    use redis::{
+        streams::{StreamMaxlen, StreamReadOptions},
+        Cmd, RedisResult, ToRedisArgs,
+    };
 
-/// Stream Model for consuming and subscribing to redis stream data type
-pub trait StreamModel {
-    /// Data that will published and consumed from the stream
-    type Data: ToRedisArgs + FromRedisValue;
+    use super::StreamModel;
 
-    /// Redis Stream Key
-    fn stream_key() -> &'static str;
+    pub fn publish<S: StreamModel, D: ToRedisArgs>(data: &D) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XADD");
+        cmd.arg(S::stream_key()).arg("*").arg(data);
 
-    /// Group Name
-    fn group_name(&self) -> &str;
-
-    /// Consumer Name
-    fn consumer_name(&self) -> &str;
-
-    /// Publish self to stream, returning event id
-    fn publish(data: &Self::Data, conn: &mut Conn) -> RedisResult<String> {
-        conn.xadd_map(Self::stream_key(), "*", data)
+        Ok(cmd)
     }
 
-    /// Ensure group stream exists for [`Self::stream_key`], creates a new if it doesn't exists.
-    /// Errors if it fails to ensure stream
-    fn ensure_group_stream(&self, conn: &mut Conn) -> RedisResult<()> {
-        if let Err(err) = conn
-            .xgroup_create_mkstream(Self::stream_key(), self.group_name(), "$")
-            .map(|_: String| ())
-        {
-            // It is expected behavior that this will fail when already initalized
-            // Expected error: `BUSYGROUP: Consumer Group name already exists`
-            if err.code() != Some("BUSYGROUP") {
-                return Err(err);
-            }
-        }
-        Ok(())
+    pub fn ensure_group_stream<S: StreamModel>(s: &impl StreamModel) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XGROUP");
+        cmd.arg("CREATE")
+            .arg(S::stream_key())
+            .arg(s.group_name())
+            .arg("$");
+
+        Ok(cmd)
     }
 
-    /// Read from [`Self::stream_key`] with group name and consumer name.
-    fn read(
-        &self,
+    pub fn read<S: StreamModel>(
+        s: &impl StreamModel,
         read_count: Option<usize>,
         block_interval: Option<usize>,
-        conn: &mut Conn,
-    ) -> RedisResult<Vec<Message>> {
-        let mut opts = StreamReadOptions::default().group(self.group_name(), self.consumer_name());
+    ) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XREADGROUP");
+        let mut opts = StreamReadOptions::default().group(s.group_name(), s.consumer_name());
         if let Some(read_count) = read_count {
             opts = opts.count(read_count)
         }
@@ -61,20 +50,132 @@ pub trait StreamModel {
             opts = opts.block(block_interval)
         }
 
-        conn.xread_options::<_, _, StreamReadReply>(&[Self::stream_key()], &[">"], &opts)?
+        cmd.arg(opts)
+            .arg("STREAMS")
+            .arg(&[S::stream_key()])
+            .arg(&[">"]);
+
+        Ok(cmd)
+    }
+
+    pub fn read_no_group<S: StreamModel>(id: impl AsRef<str>) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XREAD");
+
+        cmd.arg("STREAMS")
+            .arg(&[S::stream_key()])
+            .arg(&[id.as_ref()]);
+
+        Ok(cmd)
+    }
+
+    pub fn autoclaim<S: StreamModel>(
+        group: &str,
+        consumer: impl AsRef<str>,
+        min_idle_time: usize,
+        last_autocalim_id: impl AsRef<str>,
+        read_count: Option<usize>,
+    ) -> RedisResult<Cmd> {
+        let id = last_autocalim_id.as_ref();
+        let mut cmd = redis::cmd("XAUTOCLAIM");
+
+        cmd.arg(S::stream_key())
+            .arg(group)
+            .arg(consumer.as_ref())
+            .arg(min_idle_time)
+            .arg(&id);
+
+        if let Some(read_count) = read_count {
+            cmd.arg("COUNT").arg(read_count);
+        }
+
+        Ok(cmd)
+    }
+
+    pub fn ack<S: StreamModel>(
+        group: impl ToRedisArgs,
+        ids: &[impl ToRedisArgs],
+    ) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XACK");
+        cmd.arg(S::stream_key()).arg(group).arg(ids);
+        Ok(cmd)
+    }
+
+    pub fn trim<S: StreamModel>(maxlen: StreamMaxlen) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XTRIM");
+        cmd.arg(S::stream_key()).arg(maxlen);
+        Ok(cmd)
+    }
+
+    pub fn len<S: StreamModel>() -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XLEN");
+        cmd.arg(S::stream_key());
+        Ok(cmd)
+    }
+
+    pub fn range_count<S: StreamModel, B: ToRedisArgs, E: ToRedisArgs, C: ToRedisArgs>(
+        start: B,
+        end: E,
+        count: C,
+    ) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XRANGE");
+
+        cmd.arg(S::stream_key())
+            .arg(start)
+            .arg(end)
+            .arg("COUNT")
+            .arg(count);
+
+        Ok(cmd)
+    }
+
+    pub fn range<S: StreamModel, B: ToRedisArgs, E: ToRedisArgs>(
+        start: B,
+        end: E,
+    ) -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XRANGE");
+
+        cmd.arg(S::stream_key()).arg(start).arg(end);
+
+        Ok(cmd)
+    }
+
+    pub fn range_all<S: StreamModel>() -> RedisResult<Cmd> {
+        let mut cmd = redis::cmd("XREVRANGE");
+
+        cmd.arg(S::stream_key()).arg("+").arg("-");
+
+        Ok(cmd)
+    }
+}
+
+mod transformers {
+    use super::{
+        message::Message,
+        reply::{StreamRangeReply, StreamReadReply},
+        StreamModel,
+    };
+    use redis::RedisResult;
+    use tap::Pipe;
+
+    pub fn stream_read_reply_to_messages(
+        s: &impl StreamModel,
+        reply: StreamReadReply,
+    ) -> RedisResult<Vec<Message>> {
+        reply
             .keys
             .into_iter()
             .flat_map(|stream| {
                 let into_iter = stream.ids.into_iter();
-                into_iter.map(|item| Message::new(item, self.group_name().to_string()))
+                into_iter.map(|item| Message::new(item, s.group_name().to_string()))
             })
             .collect::<Vec<_>>()
             .pipe(Ok)
     }
 
-    /// Abstraction with default options and without a group.
-    fn read_no_group(id: impl AsRef<str>, conn: &mut Conn) -> RedisResult<Vec<Message>> {
-        conn.xread::<_, _, StreamReadReply>(&[Self::stream_key()], &[id.as_ref()])?
+    pub fn stream_read_no_group_reply_to_messages(
+        reply: StreamReadReply,
+    ) -> RedisResult<Vec<Message>> {
+        reply
             .keys
             .into_iter()
             .flat_map(|stream| {
@@ -85,100 +186,37 @@ pub trait StreamModel {
             .pipe(Ok)
     }
 
-    /// Autoclaim an event and return a stream of messages found during the autoclaim.
-    fn autoclaim(
-        group: impl AsRef<str>,
-        consumer: impl AsRef<str>,
-        min_idle_time: usize,
-        last_autocalim_id: impl AsRef<str>,
-        read_count: Option<usize>,
-        conn: &mut Conn,
-    ) -> RedisResult<(String, Vec<Message>)> {
-        let id = last_autocalim_id.as_ref();
-        let mut cmd = redis::cmd("XAUTOCLAIM");
-
-        cmd.arg(Self::stream_key())
-            .arg(group.as_ref())
-            .arg(consumer.as_ref())
-            .arg(min_idle_time)
-            .arg(&id);
-
-        if let Some(read_count) = read_count {
-            cmd.arg("COUNT").arg(read_count);
-        }
-
-        let (new_id, StreamRangeReply { ids: res }) = cmd.query(conn)?;
-
-        let resp = res
+    pub fn stream_range_to_messages(reply: StreamRangeReply) -> RedisResult<Vec<Message>> {
+        reply
+            .ids
             .into_iter()
-            .map(move |item| Message::new(item, group.as_ref().to_owned()))
+            .map(move |item| Message::new(item, "none".into()))
+            .collect::<Vec<_>>()
+            .pipe(Ok)
+    }
+
+    pub fn ensure_group_stream_success(res: RedisResult<String>) -> RedisResult<()> {
+        // It is expected behavior that this will fail when already initalized
+        // Expected error: `BUSYGROUP: Consumer Group name already exists`
+        if let Err(err) = res.map(|_: String| ()) {
+            if err.code() != Some("BUSYGROUP") {
+                return Err(err);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn autoclaim_range_to_id_and_messages(
+        group: &str,
+        new_id: String,
+        reply: StreamRangeReply,
+    ) -> RedisResult<(String, Vec<Message>)> {
+        let resp = reply
+            .ids
+            .into_iter()
+            .map(move |item| Message::new(item, group.to_owned()))
             .collect::<Vec<_>>();
 
         Ok((new_id, resp))
-    }
-
-    /// Acknowledge a given list of ids for group
-    fn ack<'a, I: ToRedisArgs>(
-        ids: &'a [I],
-        group: impl ToRedisArgs,
-        conn: &mut Conn,
-    ) -> RedisResult<()> {
-        conn.xack(Self::stream_key(), group, ids)
-    }
-
-    /// Return the length of the stream
-    fn len(conn: &mut Conn) -> RedisResult<usize> {
-        conn.xlen(Self::stream_key())
-    }
-
-    /// Trim a stream to a MAXLEN count.
-    fn trim(maxlen: StreamMaxlen, conn: &mut Conn) -> RedisResult<()> {
-        conn.xtrim(Self::stream_key(), maxlen)
-    }
-
-    /// Returns a range of messages.
-    ///
-    /// Set `start` to `-` to begin at the first message.
-    /// Set `end` to `+` to end the most recent message.
-    ///
-    /// You can pass message `id` to both `start` and `end`.
-    ///
-    fn range_count<S: ToRedisArgs, E: ToRedisArgs, C: ToRedisArgs>(
-        start: S,
-        end: E,
-        count: C,
-        conn: &mut Conn,
-    ) -> RedisResult<Vec<Message>> {
-        conn.xrange_count::<_, _, _, _, StreamRangeReply>(Self::stream_key(), start, end, count)?
-            .ids
-            .into_iter()
-            .map(move |item| Message::new(item, "none".into()))
-            .collect::<Vec<_>>()
-            .pipe(Ok)
-    }
-
-    /// A method for paginating the stream
-    fn range<S: ToRedisArgs, E: ToRedisArgs>(
-        start: S,
-        end: E,
-        conn: &mut Conn,
-    ) -> RedisResult<Vec<Message>> {
-        conn.xrange::<_, _, _, StreamRangeReply>(Self::stream_key(), start, end)?
-            .ids
-            .into_iter()
-            .map(move |item| Message::new(item, "none".into()))
-            .collect::<Vec<_>>()
-            .pipe(Ok)
-    }
-
-    /// A helper method for automatically returning all messages in a stream by `key`.
-    /// **Use with caution!**
-    fn range_all(conn: &mut Conn) -> RedisResult<Vec<Message>> {
-        conn.xrange_all::<_, StreamRangeReply>(Self::stream_key())?
-            .ids
-            .into_iter()
-            .map(move |item| Message::new(item, "none".into()))
-            .collect::<Vec<_>>()
-            .pipe(Ok)
     }
 }
