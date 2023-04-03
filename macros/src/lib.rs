@@ -41,6 +41,15 @@ pub fn redis_model(attr: TokenStream) -> TokenStream {
     }
 }
 
+#[proc_macro_derive(StreamModel, attributes(redis))]
+pub fn stream_model(attr: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(attr as DeriveInput);
+    match into_container(&input) {
+        Ok((ctx, cont)) => into_stream(stream_model::derive(&ctx, &cont), ctx),
+        Err(value) => return value,
+    }
+}
+
 #[proc_macro_derive(RedisTransportValue, attributes(redis))]
 pub fn redis_transport_value(attr: TokenStream) -> TokenStream {
     let input = parse_macro_input!(attr as DeriveInput);

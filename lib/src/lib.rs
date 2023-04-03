@@ -8,6 +8,7 @@ mod hash_model;
 mod json_model;
 mod redis_model;
 mod redissearch_model;
+mod stream_model;
 
 pub use redis;
 pub use redis::{Client, FromRedisValue, RedisError, RedisResult, ToRedisArgs};
@@ -16,6 +17,7 @@ pub use redis_om_macros::HashModel;
 #[cfg(feature = "json")]
 pub use redis_om_macros::JsonModel;
 pub use redis_om_macros::RedisModel;
+pub use redis_om_macros::StreamModel;
 
 /// Derive procedural macro that automatically generate implementation for
 ///
@@ -68,6 +70,9 @@ pub use hash_model::HashModel;
 pub use json_model::*;
 pub use redis_model::RedisModel;
 pub use redissearch_model::RedisSearchModel;
+pub use stream_model::StreamModel;
+
+
 
 #[cfg(feature = "aio")]
 pub use async_trait::async_trait;
