@@ -11,10 +11,6 @@ pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream,
     // TODO: Find a way to ignore types already implements default trait.
 
     let mut stream = TokenStream::new();
-    #[cfg(feature = "aio")]
-    let attributes: Vec<syn::Attribute> = vec![syn::parse_quote!(#[::redis_om::async_trait])];
-    #[cfg(not(feature = "aio"))]
-    let attributes: Vec<syn::Attribute> = Vec::new();
 
     crate::value::derive(errors, cont)?.to_tokens(&mut stream);
     crate::redis_model::derive(errors, cont)?.to_tokens(&mut stream);
@@ -22,7 +18,6 @@ pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream,
 
     Ok(quote! {
         #stream
-        #(#attributes)*
         impl ::redis_om::HashModel for #type_name { }
 
     })

@@ -68,6 +68,3 @@ pub use json_model::*;
 pub use redis_model::RedisModel;
 pub use redissearch_model::RedisSearchModel;
 pub use stream_model::StreamModel;
-
-#[cfg(feature = "aio")]
-pub use async_trait::async_trait;

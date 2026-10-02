@@ -11,14 +11,9 @@ pub fn derive(errors: &mut Accumulator, cont: &Container) -> Result<TokenStream,
     let mut stream = TokenStream::new();
     crate::redis_model::derive(errors, cont)?.to_tokens(&mut stream);
     redis_schema::derive(errors, cont)?.to_tokens(&mut stream);
-    #[cfg(feature = "aio")]
-    let attributes: Vec<syn::Attribute> = vec![syn::parse_quote!(#[::redis_om::async_trait])];
-    #[cfg(not(feature = "aio"))]
-    let attributes: Vec<syn::Attribute> = Vec::new();
 
     Ok(quote! {
         #stream
-        #(#attributes)*
         impl ::redis_om::JsonModel for #type_name { }
     })
 }
